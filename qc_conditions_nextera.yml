@@ -1,0 +1,87 @@
+quast:
+  '# contigs (>= 1000 bp)':
+    warning:
+      condition_type: gt
+      condition_value: 75
+    failure:
+      condition_type: gt
+      condition_value: 150
+  'N50':
+    warning:
+      condition_type: lt
+      condition_value: 100000
+    failure:
+      condition_type: lt
+      condition_value: 50000
+  'Total length (>= 1000 bp)':
+    warning:
+      condition_type: lt_or_gt
+      condition_value:
+        - MIN_GENOME_LENGTH
+        - MAX_GENOME_LENGTH
+fastqc:
+  'Basic Statistics':
+    warning:
+      condition_type: eq
+      condition_value: WARN
+    failure:
+      condition_type: eq
+      condition_value: FAIL
+  'Per base sequence quality':
+      failure:
+        condition_type: eq
+        condition_value: FAIL
+  'Per sequence quality scores':
+      failure:
+        condition_type: eq
+        condition_value: FAIL
+  'Per sequence GC content':
+      warning:
+        condition_type: eq
+        condition_value: FAIL
+  'Per base N content':
+      warning:
+        condition_type: eq
+        condition_value: FAIL
+  'Sequence Length Distribution':
+      failure:
+        condition_type: eq
+        condition_value: FAIL
+  'Sequence Duplication Levels':
+      warning:
+        condition_type: eq
+        condition_value: FAIL
+  'Overrepresented sequences':
+      failure:
+        condition_type: eq
+        condition_value: FAIL
+  'Adapter Content':
+      failure:
+        condition_type: eq
+        condition_value: FAIL
+confindr:
+  'contam_status':
+    failure:
+      condition_type: eq
+      condition_value: 'True'
+  'percentage_contamination':
+    failure:
+      condition_type: gt
+      condition_value: 5
+    warning:
+      condition_type: gt
+      condition_value: 0
+bactinspector:
+  'result':
+    warning:
+      condition_type: eq
+      condition_value: 'uncertain'
+  'species':
+    warning:
+      condition_type: eq
+      condition_value: ''
+file_size_check:
+  'size':
+    failure:
+      condition_type: lt
+      condition_value: MIN_FILE_SIZE
