@@ -1,8 +1,8 @@
 nextflow.enable.dsl=2
-include {help_message; version_message; complete_message; error_message; pipeline_start_message} from './lib/messages'
-include {default_params; check_params } from './lib/params_parser'
-include {help_or_version} from './lib/params_utilities'
-include {PRE_SCREEN_GENOME_SIZE_ESTIMATION} from './lib/processes'
+include {help_message; version_message; complete_message; error_message; pipeline_start_message} from './modules/messages'
+include {default_params; check_params } from './modules/params_parser'
+include {help_or_version} from './modules/params_utilities'
+include {PRE_SCREEN_GENOME_SIZE_ESTIMATION} from './modules/processes'
 
 version = '2.0.0'
 
