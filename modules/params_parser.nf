@@ -2,7 +2,7 @@ include {check_mandatory_parameter; check_optional_parameters} from './params_ut
 
 def default_params(){
     /***************** Setup inputs and channels ************************/
-    def params = [:]
+    def params = [:] as nextflow.script.ScriptBinding$ParamsMap
     // Defaults for configurable variables
     params.help = false
     params.version = false
@@ -18,15 +18,13 @@ def default_params(){
     params.confindr_db_path = false
     params.qc_conditions = false
     params.prescreen_genome_size_check = false
-    params.prescreen_file_size_check = false
+    params.prescreen_file_size_check = 5
     params.full_output = false
-
     return params
 }
 
 def check_params(Map params) { 
-    // set up input directory
-    def final_params = [:]
+    final_params = params
     // check input dir
     final_params.input_dir = check_mandatory_parameter(params, 'input_dir') - ~/\/$/
     // set up output directory
@@ -68,17 +66,8 @@ def check_params(Map params) {
     // confindr_db_path = "/home/bio/software_data/confindr_database"
     // }
 
-    // if (params.prescreen_genome_size_check){
-    // prescreen_genome_size_check = params.prescreen_genome_size_check
-    // } else {
-    // prescreen_genome_size_check = false
-    // }
 
-    // if (params.prescreen_file_size_check){
-    // prescreen_file_size_check = params.prescreen_file_size_check
-    // } else {
-    // prescreen_file_size_check = 15
-    // }
+
 
     // // set full_output 
     // if (params.full_output) {
