@@ -79,7 +79,7 @@ process QC_PRE_TRIMMING {
     tag { sample_id }
 
     if (params.full_output){
-    publishDir "${params.output_dir}/fastqc/pre_trimming",
+        publishDir "${params.output_dir}/fastqc/pre_trimming",
         mode: 'copy',
         pattern: "*.html"
     }
@@ -91,7 +91,13 @@ process QC_PRE_TRIMMING {
     file('*.html')
 
     script:
-    """
-    fastqc ${file_pair[0]} ${file_pair[1]}
-    """
+    if (params.single_read){
+        """
+        fastqc ${file_pair[0]}
+        """
+    } else {
+        """
+        fastqc ${file_pair[0]} ${file_pair[1]}
+        """
+    }
 }

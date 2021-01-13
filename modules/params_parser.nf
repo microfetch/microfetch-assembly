@@ -9,6 +9,7 @@ def default_params(){
     params.input_dir = false
     params.output_dir = false
     params.fastq_pattern = false
+    params.single_read = false
     params.accession_number_file = false
     params.adapter_file = false
     params.depth_cutoff = false

@@ -23,11 +23,10 @@ workflow {
     .fromFilePairs("${params.input_dir}/${params.fastq_pattern}")
     .ifEmpty { error "Cannot find any reads matching: ${params.input_dir}/${params.fastq_pattern}" }
 
-    // pre-screen check based on genomoe size
+    // pre-screen check based on genome size
     if (final_params.prescreen_genome_size_check) {
         PRE_SCREEN_GENOME_SIZE_ESTIMATION(reads)
         genome_sizes = PRE_SCREEN_GENOME_SIZE_ESTIMATION.out.map { pair_id, file -> find_genome_size(pair_id, file.text) }
-
         // excluded genomes
         excluded_genomes_based_on_size = genome_sizes.filter { it[1] > final_params.prescreen_genome_size_check }
         WRITE_OUT_EXCLUDED_GENOMES(excluded_genomes_based_on_size)
@@ -41,7 +40,6 @@ workflow {
         // filter files based on size
         // included genomes
         included_genomes_based_on_file_size = PRE_SCREEN_FASTQ_FILESIZE.out.filter { it[1].toFloat() >= final_params.prescreen_file_size_check }
-
         // excluded genomes
         excluded_genomes_based_on_file_size = PRE_SCREEN_FASTQ_FILESIZE.out.filter { it[1].toFloat() < final_params.prescreen_file_size_check }
 
