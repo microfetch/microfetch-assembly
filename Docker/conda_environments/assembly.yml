@@ -7,3 +7,12 @@ dependencies:
   - mash=2.1
   - fastqc=0.11.8
   - trimmomatic=0.38
+  - flash=1.2.11
+  - lighter=1.1.1
+  - pilon=1.22
+  - seqtk=1.3
+  - spades=3.12.0
+  - bwa=0.7.17
+  - samtools=1.9
+  - bbmap=38.22
+  - multiqc=1.7

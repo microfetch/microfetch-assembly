@@ -1,0 +1,5 @@
+biopython==1.72
+contig-tools==0.2.3
+pyyaml==3.13
+qualifyr==1.4.4
+bactinspectormax==0.1.3
