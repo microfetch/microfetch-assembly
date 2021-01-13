@@ -17,7 +17,7 @@ final_params = check_params(merged_params)
 // starting pipeline
 pipeline_start_message(version, final_params)
 
-include {PRE_SCREEN_GENOME_SIZE_ESTIMATION; WRITE_OUT_EXCLUDED_GENOMES; PRE_SCREEN_FASTQ_FILESIZE; WRITE_OUT_FILESIZE_CHECK; DETERMINE_MIN_READ_LENGTH; QC_PRE_TRIMMING} from './modules/processes' addParams(final_params)
+include {PRE_SCREEN_GENOME_SIZE_ESTIMATION; WRITE_OUT_EXCLUDED_GENOMES; PRE_SCREEN_FASTQ_FILESIZE; WRITE_OUT_FILESIZE_CHECK; DETERMINE_MIN_READ_LENGTH; QC_PRE_TRIMMING; TRIMMING} from './modules/processes' addParams(final_params)
 workflow {
     reads = Channel
     .fromFilePairs("${params.input_dir}/${params.fastq_pattern}")
@@ -51,4 +51,6 @@ workflow {
     DETERMINE_MIN_READ_LENGTH(reads)
     min_trim_length_and_reads = DETERMINE_MIN_READ_LENGTH.out.join(reads)
     QC_PRE_TRIMMING(reads)
+    // Trimmming step
+    TRIMMMING(min_trim_length_and_reads, file(params.adapter_file))
 }

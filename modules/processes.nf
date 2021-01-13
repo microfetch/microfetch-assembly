@@ -101,3 +101,29 @@ process QC_PRE_TRIMMING {
         """
     }
 }
+
+// TRIMMING
+process TRIMMING {
+  memory '4 GB'
+  tag { sample_id }
+  
+  input:
+  tuple( val(sample_id), val(min_read_length), file(reads))
+  file('adapter_file.fas')
+
+  output:
+  tuple( val(sample_id), file('trimmed_fastqs/*.f*q.gz')) 
+
+  if (params.single_read) {
+    """
+    mkdir trimmed_fastqs
+    trimmomatic SE -threads 1 -phred33 ${reads[0]} trimmed_fastqs/${reads[0]} /dev/null ILLUMINACLIP:adapter_file.fas:2:30:10 SLIDINGWINDOW:4:20 LEADING:25 TRAILING:25 MINLEN:${min_read_length}  
+
+    """
+  } else {
+    """
+    mkdir trimmed_fastqs
+    trimmomatic PE -threads 1 -phred33 ${reads[0]} ${reads[1]} trimmed_fastqs/${file_pair[0]} /dev/null trimmed_fastqs/${file_pair[1]} /dev/null ILLUMINACLIP:adapter_file.fas:2:30:10 SLIDINGWINDOW:4:20 LEADING:25 TRAILING:25 MINLEN:${min_read_length}  
+    """
+  }
+}
