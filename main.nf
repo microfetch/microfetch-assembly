@@ -67,5 +67,6 @@ workflow {
     TRIMMING(min_trim_length_and_reads, file(params.adapter_file))
 
     QC_POST_TRIMMING(TRIMMING.out)
-    QC_POST_TRIMMING.out.view()
+    QC_POST_TRIMMING.out.qc_post_trimming_files.view()
+    QC_POST_TRIMMING.out.fastqc_directories.view()
 }
