@@ -17,7 +17,7 @@ final_params = check_params(merged_params)
 // starting pipeline
 pipeline_start_message(version, final_params)
 
-include {PRE_SCREEN_GENOME_SIZE_ESTIMATION; WRITE_OUT_EXCLUDED_GENOMES; PRE_SCREEN_FASTQ_FILESIZE; WRITE_OUT_FILESIZE_CHECK; DETERMINE_MIN_READ_LENGTH; QC_PRE_TRIMMING; TRIMMING} from './modules/processes' addParams(final_params)
+include {PRE_SCREEN_GENOME_SIZE_ESTIMATION; WRITE_OUT_EXCLUDED_GENOMES; PRE_SCREEN_FASTQ_FILESIZE; WRITE_OUT_FILESIZE_CHECK; DETERMINE_MIN_READ_LENGTH; QC_PRE_TRIMMING; TRIMMING; QC_POST_TRIMMING} from './modules/processes' addParams(final_params)
 workflow {
     if (final_params.single_read){
         sample_id_and_reads = Channel
@@ -65,5 +65,7 @@ workflow {
     QC_PRE_TRIMMING(sample_id_and_reads)
     // Trimmming step
     TRIMMING(min_trim_length_and_reads, file(params.adapter_file))
-    TRIMMING.out.view()
+
+    QC_POST_TRIMMING(TRIMMING.out)
+    QC_POST_TRIMMING.out.view()
 }

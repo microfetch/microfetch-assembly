@@ -128,3 +128,36 @@ process TRIMMING {
     """
   }
 }
+
+// Post-Trimming QC
+process QC_POST_TRIMMING {
+  tag { sample_id }
+
+  publishDir "${output_dir}/fastqc/post_trimming",
+    mode: 'copy',
+    pattern: "*.html"
+  
+  input:
+  tuple(val(sample_id), file(reads)) 
+
+  output:
+  file('*.html')
+  tuple(val(sample_id), file("${sample_id}_R1_fastqc.txt"), file("${sample_id}_R2_fastqc.txt")), emit: qc_post_trimming_files
+  tuple(file("${r1_prefix}_fastqc_data"), file("${r2_prefix}_fastqc_data")), emit: fastqc_directories
+
+  script:
+  r1_prefix = reads[0].baseName.replaceFirst(/\\.gz$/, '').split('\\.')[0..-2].join('.')
+  r2_prefix = reads[1].baseName.replaceFirst(/\\.gz$/, '').split('\\.')[0..-2].join('.')
+  """
+  fastqc ${reads[0]} ${reads[1]} --extract
+  # rename files
+  mv ${r1_prefix}_fastqc/summary.txt ${sample_id}_R1_fastqc.txt
+  mv ${r2_prefix}_fastqc/summary.txt ${sample_id}_R2_fastqc.txt
+
+  # move files for fastqc
+  mkdir ${r1_prefix}_fastqc_data
+  mkdir ${r2_prefix}_fastqc_data
+  mv ${r1_prefix}_fastqc/fastqc_data.txt ${r1_prefix}_fastqc_data
+  mv ${r2_prefix}_fastqc/fastqc_data.txt ${r2_prefix}_fastqc_data
+  """
+}
