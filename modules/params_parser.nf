@@ -37,6 +37,10 @@ def check_params(Map params) {
 
     //  check an adapter_file has been specified
     final_params.adapter_file = check_mandatory_parameter(params, 'adapter_file')
+    // make path absolute
+    if (!final_params.adapter_file.startsWith("/")){
+        final_params.adapter_file = "${baseDir}/${final_params.adapter_file}"
+    }
     // // assign depth_cutoff from params
     // depth_cutoff = params.depth_cutoff
 

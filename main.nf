@@ -64,7 +64,7 @@ workflow {
     min_trim_length_and_reads = DETERMINE_MIN_READ_LENGTH.out.join(sample_id_and_reads)
     QC_PRE_TRIMMING(sample_id_and_reads)
     // Trimmming step
-    TRIMMING(min_trim_length_and_reads, file(params.adapter_file))
+    TRIMMING(min_trim_length_and_reads, final_params.adapter_file)
 
     QC_POST_TRIMMING(TRIMMING.out)
     QC_POST_TRIMMING.out.qc_post_trimming_files.view()

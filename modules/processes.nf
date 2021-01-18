@@ -2,10 +2,10 @@ process PRE_SCREEN_GENOME_SIZE_ESTIMATION {
     tag { sample_id }
 
     input:
-    tuple val(sample_id), file(reads)
+    tuple(val(sample_id), path(reads))
 
     output:
-    tuple val(sample_id), file('mash_stats.out')
+    tuple(val(sample_id), path('mash_stats.out'))
 
     script:
     """
@@ -20,10 +20,10 @@ process WRITE_OUT_EXCLUDED_GENOMES {
 
     publishDir "${params.output_dir}/estimated_size_of_excluded_genomes"
     input:
-    tuple val(sample_id), val(genome_size)
+    tuple(val(sample_id), val(genome_size))
 
     output:
-    file("${sample_id}.estimated_genome_size.txt") 
+    path("${sample_id}.estimated_genome_size.txt") 
 
     script:
     """
@@ -35,10 +35,10 @@ process PRE_SCREEN_FASTQ_FILESIZE {
     tag { sample_id }
     
     input:
-    tuple val(sample_id), file(file_pair)
+    tuple(val(sample_id), path(file_pair))
 
     output:
-    tuple val(sample_id), stdout
+    tuple(val(sample_id), stdout)
 
     script:
     """
@@ -50,10 +50,10 @@ process WRITE_OUT_FILESIZE_CHECK {
     tag { sample_id }
 
     input:
-    tuple val(sample_id), val(file_size)
+    tuple(val(sample_id), val(file_size))
 
     output:
-    tuple val(sample_id), file("${sample_id}.file_size_check.tsv")
+    tuple(val(sample_id), path("${sample_id}.file_size_check.tsv"))
 
     script:
     """
@@ -64,10 +64,10 @@ process DETERMINE_MIN_READ_LENGTH {
     tag { sample_id }
 
     input:
-    tuple val(sample_id), file(file_pair)
+    tuple(val(sample_id), path(file_pair))
 
     output:
-    tuple val(sample_id), stdout
+    tuple(val(sample_id), stdout)
 
     script:
     """
@@ -85,10 +85,10 @@ process QC_PRE_TRIMMING {
     }
 
     input:
-    tuple val(sample_id), file(file_pair)
+    tuple(val(sample_id), path(file_pair))
 
     output:
-    file('*.html')
+    path('*.html')
 
     script:
     if (params.single_read){
@@ -108,11 +108,11 @@ process TRIMMING {
   tag { sample_id }
   
   input:
-  tuple val(sample_id), val(min_read_length), file(reads)
-  file('adapter_file.fas')
+  tuple(val(sample_id), val(min_read_length), path(reads))
+  path('adapter_file.fas')
 
   output:
-  tuple val(sample_id), file('trimmed_fastqs/*.f*q.gz') 
+  tuple(val(sample_id), path('trimmed_fastqs/*.f*q.gz') )
 
   script:
   if (params.single_read) {
@@ -138,12 +138,12 @@ process QC_POST_TRIMMING {
     pattern: "*.html"
   
   input:
-  tuple val(sample_id), file(reads) 
+  tuple(val(sample_id), path(reads) )
 
   output:
-  file('*.html')
-  tuple val(sample_id), file("${sample_id}_R1_fastqc.txt"), file("${sample_id}_R2_fastqc.txt"), emit: qc_post_trimming_files
-  tuple file("${r1_prefix}_fastqc_data"), file("${r2_prefix}_fastqc_data"), emit: fastqc_directories
+  path('*.html')
+  tuple(val(sample_id), path("${sample_id}_R1_fastqc.txt"), path("${sample_id}_R2_fastqc.txt"), emit: qc_post_trimming_files)
+  tuple(path("${r1_prefix}_fastqc_data"), path("${r2_prefix}_fastqc_data"), emit: fastqc_directories)
 
   script:
   r1_prefix = reads[0].baseName.replaceFirst(/\\.gz$/, '').split('\\.')[0..-2].join('.')
