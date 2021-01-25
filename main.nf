@@ -67,6 +67,17 @@ workflow {
     TRIMMING(min_trim_length_and_reads, final_params.adapter_file)
 
     QC_POST_TRIMMING(TRIMMING.out)
+
+    // >>>>>>>>>> COLOLMBIA ADD CUT ADAPT PROCESS HERE
+
     QC_POST_TRIMMING.out.qc_post_trimming_files.view()
     QC_POST_TRIMMING.out.fastqc_directories.view()
+
+    // >>>>>>>>>> COLOLMBIA FASTQC MULTIQC PROCESS HERE
+
+    // >>>>>>>>>> NIGERIA SPECIES IDENTIFICATION PROCESS HERE
+
+    // >>>>>>>>>> INDIA READ CORRECTION PROCESS HERE
+
+    // >>>>>>>>>> PHILIPPINES CHECK FOR CONTAMINATION PROCESS HERE
 }
