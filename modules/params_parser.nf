@@ -21,6 +21,7 @@ def default_params(){
     params.prescreen_genome_size_check = false
     params.prescreen_file_size_check = 5
     params.full_output = false
+    params.cutadapt = false
     return params
 }
 
