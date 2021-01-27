@@ -219,3 +219,26 @@ process QC_POST_CUTADAPT {
   mv ${r2_prefix}_fastqc/fastqc_data.txt ${r2_prefix}_fastqc_data
   """
 }
+
+//FastQC MultiQC
+process FASTQC_MULTIQC {
+  tag { 'multiqc for fastqc' }
+  memory { 4.GB * task.attempt }
+
+  publishDir "${output_dir}/quality_reports",
+    mode: 'copy',
+    pattern: "multiqc_report.html",
+    saveAs: { "fastqc_multiqc_report.html" }
+
+  input:
+  file(fastqc_directories) 
+
+  output:
+  file("multiqc_report.html")
+
+  script:
+  """
+  multiqc --interactive .
+  """
+
+}
