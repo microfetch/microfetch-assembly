@@ -67,28 +67,23 @@ workflow {
     // CUTADAPT and QC_Post_Cutadapt
     if (final_params.cutadapt){
         CUTADAPT(sample_id_and_reads, final_params.adapter_file)
-        QC_POST_CUTADAPT(CUTADAPT.out)
         min_trim_length_and_reads = DETERMINE_MIN_READ_LENGTH.out.join(CUTADAPT.out)
          // Trimmming step
         TRIMMING(min_trim_length_and_reads, final_params.adapter_file)
-        //QC_post_Trimming
-        QC_POST_TRIMMING(TRIMMING.out)
-        QC_POST_TRIMMING.out.qc_post_trimming_files.view()
-        QC_POST_TRIMMING.out.fastqc_directories.view()   
     } else {
     // Trimmming step
     TRIMMING(min_trim_length_and_reads, final_params.adapter_file)
-    //QC_post_Trimming
-    QC_POST_TRIMMING(TRIMMING.out)
-    QC_POST_TRIMMING.out.qc_post_trimming_files.view()
-    QC_POST_TRIMMING.out.fastqc_directories.view()
     }
     
-    
+    //QC_post_Trimming
+    QC_POST_TRIMMING(TRIMMING.out)
+    //QC_POST_TRIMMING.out.qc_post_trimming_files.view()
+    //QC_POST_TRIMMING.out.fastqc_directories.view()
            
     // >>>>>>>>>> COLOLMBIA FASTQC MULTIQC PROCESS HERE
     FASTQC_MULTIQC(QC_POST_TRIMMING.out.fastqc_directories.collect())
-
+    FASTQC_MULTIQC.out.view()
+    //fastqc_collected.view()
     // >>>>>>>>>> NIGERIA SPECIES IDENTIFICATION PROCESS HERE
 
     // >>>>>>>>>> INDIA READ CORRECTION PROCESS HERE

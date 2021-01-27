@@ -225,7 +225,7 @@ process FASTQC_MULTIQC {
   tag { 'multiqc for fastqc' }
   memory { 4.GB * task.attempt }
 
-  publishDir "${output_dir}/quality_reports",
+  publishDir "${params.output_dir}/quality_reports",
     mode: 'copy',
     pattern: "multiqc_report.html",
     saveAs: { "fastqc_multiqc_report.html" }
