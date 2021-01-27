@@ -181,7 +181,7 @@ process CUTADAPT {
 
 """
 mkdir pruned_fastqs
-cutadapt -m 50 -j 2 -a file:"adapter_file.fas" -A file:"adapter_file.fas" -o pruned_fastqs/${reads[0]} -p pruned_fastqs/${reads[1]} ${reads[0]} ${reads[1]}
+cutadapt -m 50 -j 2 -a file:'adapter_file.fas' -A file:'adapter_file.fas' -o pruned_fastqs/${reads[0]} -p pruned_fastqs/${reads[1]} ${reads[0]} ${reads[1]}
 
 """
 

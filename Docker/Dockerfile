@@ -16,6 +16,9 @@ RUN conda env create -f /quast.yml && conda clean -a
 COPY conda_environments/assembly.yml /
 RUN conda env create -f /assembly.yml && conda clean -a
 
+COPY conda_environments/cutadapt.yml /
+RUN conda env create -f cutadapt.yml && conda clean -a
+
 COPY requirements.txt /
 RUN pip install -r /requirements.txt
 

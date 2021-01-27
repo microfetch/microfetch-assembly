@@ -67,15 +67,16 @@ workflow {
     TRIMMING(min_trim_length_and_reads, final_params.adapter_file)
     //QC_post_Trimming
     QC_POST_TRIMMING(TRIMMING.out)
-   
+    QC_POST_TRIMMING.out.qc_post_trimming_files.view()
+    QC_POST_TRIMMING.out.fastqc_directories.view()
+    
     // CUTADAPT and QC_Post_Cutadapt
-    if (final_params.cutadap){
+    if (final_params.cutadapt){
         CUTADAPT(TRIMMING.out, final_params.adapter_file)
-        QC_POST_TRIMMING(CUTADAPT.out)    
+        //QC_POST_CUTADAPT(CUTADAPT.out)    
     }
            
-    QC_POST_CUTADAPT.out.qc_post_cutadapt_files.view()
-    QC_POST_CUTADAPT.out.fastqc_directories.view()
+    
 
     // >>>>>>>>>> COLOLMBIA FASTQC MULTIQC PROCESS HERE
 
