@@ -161,3 +161,48 @@ process QC_POST_TRIMMING {
   mv ${r2_prefix}_fastqc/fastqc_data.txt ${r2_prefix}_fastqc_data
   """
 }
+
+// >>>>>>>>>> INDIA READ CORRECTION PROCESS HERE
+
+// Read Corection
+process READ_CORRECTION {
+  tag { sample_id }
+  
+  if (full_output){
+    publishDir "${output_dir}/corrected_fastqs/",
+      mode: 'copy',
+      pattern: "*.fastq.gz"
+  }
+
+  input:
+  tuple(val(sample_id), path(reads) , genome_size from trimmed_fastqs_and_genome_size)
+
+  output:
+  path('*.fastq.gz')
+  tuple(val(sample_id), path('corrected_fastqs/*.f*q.gz') )
+  
+script:
+  if (params.single_read) {
+    """
+    lighter -od corrected_fastqs -r  ${reads[0]} -K 32 ${genome_size}  -maxcor 1 2> lighter.out
+    for file in corrected_fastqs/*.cor.fq.gz
+    do
+      new_file=\${file%.cor.fq.gz}.fastq.gz
+      mv \${file} \${new_file}
+    done
+    """
+    
+  } else {
+    """
+    lighter -od corrected_fastqs -r  ${reads[0]} -r  ${reads[1]} -K 32 ${genome_size}  -maxcor 1 2> lighter.out
+    for file in corrected_fastqs/*.cor.fq.gz
+    do
+      new_file=\${file%.cor.fq.gz}.fastq.gz
+      mv \${file} \${new_file}
+    done
+    """
+  }
+  
+}
+
+// >>>>>>>>>> INDIA READ CORRECTION PROCESS HERE

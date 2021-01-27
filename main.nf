@@ -17,7 +17,7 @@ final_params = check_params(merged_params)
 // starting pipeline
 pipeline_start_message(version, final_params)
 
-include {PRE_SCREEN_GENOME_SIZE_ESTIMATION; WRITE_OUT_EXCLUDED_GENOMES; PRE_SCREEN_FASTQ_FILESIZE; WRITE_OUT_FILESIZE_CHECK; DETERMINE_MIN_READ_LENGTH; QC_PRE_TRIMMING; TRIMMING; QC_POST_TRIMMING} from './modules/processes' addParams(final_params)
+include {PRE_SCREEN_GENOME_SIZE_ESTIMATION; WRITE_OUT_EXCLUDED_GENOMES; PRE_SCREEN_FASTQ_FILESIZE; WRITE_OUT_FILESIZE_CHECK; DETERMINE_MIN_READ_LENGTH; QC_PRE_TRIMMING; TRIMMING; QC_POST_TRIMMING; READ_CORRECTION} from './modules/processes' addParams(final_params)
 workflow {
     if (final_params.single_read){
         sample_id_and_reads = Channel
@@ -62,10 +62,11 @@ workflow {
     // Assess read length and make MIN LEN for trimmomatic 1/3 of this value
     DETERMINE_MIN_READ_LENGTH(sample_id_and_reads)
     min_trim_length_and_reads = DETERMINE_MIN_READ_LENGTH.out.join(sample_id_and_reads)
+    //QC Pre Trimming
     QC_PRE_TRIMMING(sample_id_and_reads)
     // Trimmming step
     TRIMMING(min_trim_length_and_reads, final_params.adapter_file)
-
+    //QC Post Trimming
     QC_POST_TRIMMING(TRIMMING.out)
 
     // >>>>>>>>>> COLOLMBIA ADD CUT ADAPT PROCESS HERE
@@ -78,6 +79,8 @@ workflow {
     // >>>>>>>>>> NIGERIA SPECIES IDENTIFICATION PROCESS HERE
 
     // >>>>>>>>>> INDIA READ CORRECTION PROCESS HERE
+    //Read Correction Step
+    READ_CORRECTION(genome_size, sample_id_and_reads)
 
     // >>>>>>>>>> PHILIPPINES CHECK FOR CONTAMINATION PROCESS HERE
 }
