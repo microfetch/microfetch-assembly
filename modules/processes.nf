@@ -169,13 +169,13 @@ process READ_CORRECTION {
   tag { sample_id }
   
   if (full_output){
-    publishDir "${output_dir}/corrected_fastqs/",
+    publishDir "${params.output_dir}/corrected_fastqs",
       mode: 'copy',
       pattern: "*.fastq.gz"
   }
 
   input:
-  tuple(val(sample_id), path(reads) , genome_size from trimmed_fastqs_and_genome_size)
+  tuple(val(sample_id), path(trimmed_fastqs/reads) , genome_sizes)
 
   output:
   path('*.fastq.gz')
@@ -184,7 +184,7 @@ process READ_CORRECTION {
 script:
   if (params.single_read) {
     """
-    lighter -od corrected_fastqs -r  ${reads[0]} -K 32 ${genome_size}  -maxcor 1 2> lighter.out
+    lighter -od corrected_fastqs -r  ${reads[0]} -K 32 ${genome_sizes}  -maxcor 1 2> lighter.out
     for file in corrected_fastqs/*.cor.fq.gz
     do
       new_file=\${file%.cor.fq.gz}.fastq.gz
@@ -194,7 +194,7 @@ script:
     
   } else {
     """
-    lighter -od corrected_fastqs -r  ${reads[0]} -r  ${reads[1]} -K 32 ${genome_size}  -maxcor 1 2> lighter.out
+    lighter -od corrected_fastqs -r  ${reads[0]} -r  ${reads[1]} -K 32 ${genome_sizes}  -maxcor 1 2> lighter.out
     for file in corrected_fastqs/*.cor.fq.gz
     do
       new_file=\${file%.cor.fq.gz}.fastq.gz

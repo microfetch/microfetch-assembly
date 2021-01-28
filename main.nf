@@ -79,8 +79,9 @@ workflow {
     // >>>>>>>>>> NIGERIA SPECIES IDENTIFICATION PROCESS HERE
 
     // >>>>>>>>>> INDIA READ CORRECTION PROCESS HERE
+    genome_size_trimmed_fastq = TRIMMING.out.join(genome_sizes)
     //Read Correction Step
-    READ_CORRECTION(genome_size, sample_id_and_reads)
+    READ_CORRECTION(genome_size_trimmed_fastq)
 
     // >>>>>>>>>> PHILIPPINES CHECK FOR CONTAMINATION PROCESS HERE
 }
