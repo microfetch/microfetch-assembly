@@ -1,4 +1,4 @@
-process PRE_SCREEN_GENOME_SIZE_ESTIMATION {
+process GENOME_SIZE_ESTIMATION {
     tag { sample_id }
 
     input:
@@ -116,17 +116,16 @@ process TRIMMING {
 
   script:
   if (params.single_read) {
-    """
-    mkdir trimmed_fastqs
-    trimmomatic SE -threads 1 -phred33 ${reads[0]} trimmed_fastqs/${reads[0]} ILLUMINACLIP:adapter_file.fas:2:30:10 SLIDINGWINDOW:4:20 LEADING:25 TRAILING:25 MINLEN:${min_read_length}  
-
-    """
+    method = "SE"
+    file_input_and_outputs = "${reads[0]} trimmed_fastqs/${reads[0]}"
   } else {
-    """
-    mkdir trimmed_fastqs
-    trimmomatic PE -threads 1 -phred33 ${reads[0]} ${reads[1]} trimmed_fastqs/${reads[0]} /dev/null trimmed_fastqs/${reads[1]} /dev/null ILLUMINACLIP:adapter_file.fas:2:30:10 SLIDINGWINDOW:4:20 LEADING:25 TRAILING:25 MINLEN:${min_read_length}  
-    """
+    method = "PE"
+    file_input_and_outputs = "${reads[0]} ${reads[1]} trimmed_fastqs/${reads[0]} /dev/null trimmed_fastqs/${reads[1]} /dev/null "
   }
+  """
+  mkdir trimmed_fastqs
+  trimmomatic ${method} -threads 1 -phred33 ${file_input_and_outputs} ILLUMINACLIP:adapter_file.fas:2:30:10 SLIDINGWINDOW:4:20 LEADING:25 TRAILING:25 MINLEN:${min_read_length}  
+  """
 }
 
 // Post-Trimming QC
@@ -142,10 +141,22 @@ process QC_POST_TRIMMING {
 
   output:
   path('*.html')
-  tuple(val(sample_id), path("${sample_id}_R1_fastqc.txt"), path("${sample_id}_R2_fastqc.txt"), emit: qc_post_trimming_files)
-  tuple(path("${r1_prefix}_fastqc_data"), path("${r2_prefix}_fastqc_data"), emit: fastqc_directories)
+  tuple(val(sample_id), path("${sample_id}_R*_fastqc.txt"), emit: qc_post_trimming_files)
+  path("*_fastqc_data"), emit: fastqc_directories
 
   script:
+  if (params.single_read) {
+    r1_prefix = reads[0].baseName.replaceFirst(/\\.gz$/, '').split('\\.')[0..-2].join('.')
+    """
+    fastqc ${reads[0]} --extract
+    # rename files
+    mv ${r1_prefix}_fastqc/summary.txt ${sample_id}_R1_fastqc.txt
+
+    # move files for fastqc
+    mkdir ${r1_prefix}_fastqc_data
+    mv ${r1_prefix}_fastqc/fastqc_data.txt ${r1_prefix}_fastqc_data
+    """
+  } else {
   r1_prefix = reads[0].baseName.replaceFirst(/\\.gz$/, '').split('\\.')[0..-2].join('.')
   r2_prefix = reads[1].baseName.replaceFirst(/\\.gz$/, '').split('\\.')[0..-2].join('.')
   """
@@ -160,6 +171,7 @@ process QC_POST_TRIMMING {
   mv ${r1_prefix}_fastqc/fastqc_data.txt ${r1_prefix}_fastqc_data
   mv ${r2_prefix}_fastqc/fastqc_data.txt ${r2_prefix}_fastqc_data
   """
+  }
 }
 
 // Cutadapt
@@ -178,17 +190,15 @@ process CUTADAPT {
   
   script:
   if (params.single_read) {
-
-    """
-    mkdir pruned_fastqs
-    cutadapt -m 50 -j 2 -a file:'adapter_file.fas' -o pruned_fastqs/${reads[0]} ${reads[0]}
-    """
+    file_input_and_outputs = "-o pruned_fastqs/${reads[0]} ${reads[0]}"
   } else {
-    """
-    mkdir pruned_fastqs
-    cutadapt -m 50 -j 2 -a file:'adapter_file.fas' -A file:'adapter_file.fas' -o pruned_fastqs/${reads[0]}  -p pruned_fastqs/${reads[1]} ${reads[0]} ${reads[1]}
-    """
+    file_input_and_outputs = "-o pruned_fastqs/${reads[0]}  -p pruned_fastqs/${reads[1]} ${reads[0]} ${reads[1]}"
   }
+  """
+  mkdir pruned_fastqs
+  cutadapt -m 50 -j 2 -a file:'adapter_file.fas' ${file_input_and_outputs}
+  """
+
 
 }
 
@@ -233,41 +243,31 @@ process SPECIES_IDENTIFICATION {
 process READ_CORRECTION {
   tag { sample_id }
   
-  if (full_output){
-    publishDir "${params.output_dir}/corrected_fastqs",
-      mode: 'copy',
-      pattern: "*.fastq.gz"
+  if (params.full_output){
+    publishDir "${params.output_dir}",
+      mode: "copy",
+      pattern: "corrected_fastqs/*.fastq.gz"
   }
 
   input:
-  tuple(val(sample_id), path(trimmed_fastqs/reads) , genome_sizes)
+  tuple(val(sample_id), path(reads), val(genome_size))
 
   output:
-  path('*.fastq.gz')
-  tuple(val(sample_id), path('corrected_fastqs/*.f*q.gz') )
+  tuple(val(sample_id), path("corrected_fastqs/*.f*q.gz") )
   
-script:
+  script:
   if (params.single_read) {
-    """
-    mkdir corrected_fastqs
-    lighter -od corrected_fastqs -r  ${reads[0]} -K 32 ${genome_sizes}  -maxcor 1 2> lighter.out
-    for file in corrected_fastqs/*.cor.fq.gz
-    do
-      new_file=\${file%.cor.fq.gz}.fastq.gz
-      mv \${file} \${new_file}
-    done
-    """
-    
+    reads_argument = "-r ${reads[0]}"
   } else {
-    """
-    mkdir corrected_fastqs
-    lighter -od corrected_fastqs -r  ${reads[0]} -r  ${reads[1]} -K 32 ${genome_sizes}  -maxcor 1 2> lighter.out
-    for file in corrected_fastqs/*.cor.fq.gz
-    do
-      new_file=\${file%.cor.fq.gz}.fastq.gz
-      mv \${file} \${new_file}
-    done
-    """
+    reads_argument = "-r ${reads[0]} -r ${reads[1]}"
   }
-  
+  """
+  mkdir corrected_fastqs
+  lighter -od corrected_fastqs ${reads_argument} -K 32 ${genome_size}  -maxcor 1 2> lighter.out
+  for file in corrected_fastqs/*.cor.fq.gz
+  do
+    new_file=\${file%.cor.fq.gz}.fastq.gz
+    mv \${file} \${new_file}
+  done
+  """
 }

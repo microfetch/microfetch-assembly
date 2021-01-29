@@ -17,7 +17,7 @@ final_params = check_params(merged_params)
 // starting pipeline
 pipeline_start_message(version, final_params)
 
-include {PRE_SCREEN_GENOME_SIZE_ESTIMATION; WRITE_OUT_EXCLUDED_GENOMES; PRE_SCREEN_FASTQ_FILESIZE; WRITE_OUT_FILESIZE_CHECK; DETERMINE_MIN_READ_LENGTH; QC_PRE_TRIMMING; TRIMMING; CUTADAPT; QC_POST_TRIMMING; FASTQC_MULTIQC; SPECIES_IDENTIFICATION; READ_CORRECTION} from './modules/processes' addParams(final_params)
+include {GENOME_SIZE_ESTIMATION; WRITE_OUT_EXCLUDED_GENOMES; PRE_SCREEN_FASTQ_FILESIZE; WRITE_OUT_FILESIZE_CHECK; DETERMINE_MIN_READ_LENGTH; QC_PRE_TRIMMING; TRIMMING; CUTADAPT; QC_POST_TRIMMING; FASTQC_MULTIQC; SPECIES_IDENTIFICATION; READ_CORRECTION} from './modules/processes' addParams(final_params)
 
 workflow {
     if (final_params.single_read){
@@ -32,10 +32,10 @@ workflow {
         .ifEmpty { error "Cannot find any reads matching: ${final_params.input_dir}/${final_params.fastq_pattern}" }
     }
 
+    GENOME_SIZE_ESTIMATION(sample_id_and_reads)
+    genome_sizes = GENOME_SIZE_ESTIMATION.out.map { sample_id, file -> find_genome_size(sample_id, file.text) }
     // pre-screen check based on genome size
     if (final_params.prescreen_genome_size_check) {
-        PRE_SCREEN_GENOME_SIZE_ESTIMATION(sample_id_and_reads)
-        genome_sizes = PRE_SCREEN_GENOME_SIZE_ESTIMATION.out.map { sample_id, file -> find_genome_size(sample_id, file.text) }
         // excluded genomes
         excluded_genomes_based_on_size = genome_sizes.filter { it[1] > final_params.prescreen_genome_size_check }
         WRITE_OUT_EXCLUDED_GENOMES(excluded_genomes_based_on_size)
@@ -80,8 +80,11 @@ workflow {
     // Multi QC
     FASTQC_MULTIQC(QC_POST_TRIMMING.out.fastqc_directories.collect())
     // Species ID
-    SPECIES_IDENTIFICATION(TRIMMING.out)          
+    SPECIES_IDENTIFICATION(TRIMMING.out)
+    
+
     genome_size_trimmed_fastq = TRIMMING.out.join(genome_sizes)
+
     //Read Correction Step
     READ_CORRECTION(genome_size_trimmed_fastq)
 
