@@ -17,7 +17,7 @@ final_params = check_params(merged_params)
 // starting pipeline
 pipeline_start_message(version, final_params)
 
-include {PRE_SCREEN_GENOME_SIZE_ESTIMATION; WRITE_OUT_EXCLUDED_GENOMES; PRE_SCREEN_FASTQ_FILESIZE; WRITE_OUT_FILESIZE_CHECK; DETERMINE_MIN_READ_LENGTH; QC_PRE_TRIMMING; TRIMMING; CUTADAPT; QC_POST_TRIMMING; FASTQC_MULTIQC; SPECIES_IDENTIFICATION} from './modules/processes' addParams(final_params)
+include {PRE_SCREEN_GENOME_SIZE_ESTIMATION; WRITE_OUT_EXCLUDED_GENOMES; PRE_SCREEN_FASTQ_FILESIZE; WRITE_OUT_FILESIZE_CHECK; DETERMINE_MIN_READ_LENGTH; QC_PRE_TRIMMING; TRIMMING; CUTADAPT; QC_POST_TRIMMING; FASTQC_MULTIQC; SPECIES_IDENTIFICATION; READ_CORRECTION} from './modules/processes' addParams(final_params)
 
 workflow {
     if (final_params.single_read){
@@ -75,14 +75,15 @@ workflow {
         // Trimmming step
         TRIMMING(min_trim_length_and_reads, final_params.adapter_file)
     }
-    
     //QC_post_Trimming
     QC_POST_TRIMMING(TRIMMING.out)
     // Multi QC
     FASTQC_MULTIQC(QC_POST_TRIMMING.out.fastqc_directories.collect())
     // Species ID
     SPECIES_IDENTIFICATION(TRIMMING.out)          
-    // >>>>>>>>>> INDIA READ CORRECTION PROCESS HERE
+    genome_size_trimmed_fastq = TRIMMING.out.join(genome_sizes)
+    //Read Correction Step
+    READ_CORRECTION(genome_size_trimmed_fastq)
 
     // >>>>>>>>>> PHILIPPINES CHECK FOR CONTAMINATION PROCESS HERE
 }
