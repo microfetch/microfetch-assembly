@@ -184,6 +184,7 @@ process READ_CORRECTION {
 script:
   if (params.single_read) {
     """
+    mkdir corrected_fastqs
     lighter -od corrected_fastqs -r  ${reads[0]} -K 32 ${genome_sizes}  -maxcor 1 2> lighter.out
     for file in corrected_fastqs/*.cor.fq.gz
     do
@@ -194,6 +195,7 @@ script:
     
   } else {
     """
+    mkdir corrected_fastqs
     lighter -od corrected_fastqs -r  ${reads[0]} -r  ${reads[1]} -K 32 ${genome_sizes}  -maxcor 1 2> lighter.out
     for file in corrected_fastqs/*.cor.fq.gz
     do
