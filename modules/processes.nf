@@ -112,7 +112,7 @@ process TRIMMING {
   path('adapter_file.fas')
 
   output:
-  tuple(val(sample_id), path('trimmed_fastqs/*.f*q.gz') )
+  tuple(val(sample_id), path('trimmed_fastqs/*.f*q.gz'))
 
   script:
   if (params.single_read) {
@@ -212,5 +212,20 @@ process FASTQC_MULTIQC {
   """
   multiqc --interactive .
   """
+}
 
+// Species ID
+process SPECIES_IDENTIFICATION {
+  tag { sample_id }
+
+  input:
+  tuple(val(sample_id), path(reads))  // from trimmed_fastqs_for_species_id
+
+  output:
+  tuple(val(sample_id), path("species_investigation*.tsv")) // into bactinspector_output
+
+  script:
+  """
+  bactinspector check_species -fq ${reads[0]} 
+  """
 }
