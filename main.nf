@@ -78,9 +78,9 @@ workflow {
     
     //QC_post_Trimming
     QC_POST_TRIMMING(TRIMMING.out)
-    
+    // Multi QC
     FASTQC_MULTIQC(QC_POST_TRIMMING.out.fastqc_directories.collect())
-    // >>>>>>>>>> NIGERIA SPECIES IDENTIFICATION PROCESS HERE
+    // Species ID
     SPECIES_IDENTIFICATION(TRIMMING.out)          
     // >>>>>>>>>> INDIA READ CORRECTION PROCESS HERE
 
