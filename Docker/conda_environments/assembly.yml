@@ -16,3 +16,4 @@ dependencies:
   - samtools=1.9
   - bbmap=38.22
   - multiqc=1.7
+  - cutadapt=3.2

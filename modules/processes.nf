@@ -164,60 +164,32 @@ process QC_POST_TRIMMING {
 
 // Cutadapt
 process CUTADAPT {
-   memory '4 GB'
-   tag { sample_id }
-   publishDir "${params.output_dir}/pruned_fastqs",
-   mode:'copy', 
-   pattern: '*.f*q.gz' 
-   
-   input:
-   tuple(val(sample_id), path(reads) )
-   path('adapter_file.fas')
-
-   output:
-   tuple(val(sample_id), path('pruned_fastqs/*.f*q.gz') )
-   
-   script:
-
-"""
-mkdir pruned_fastqs
-cutadapt -m 50 -j 2 -a file:'adapter_file.fas' -A file:'adapter_file.fas' -o pruned_fastqs/${reads[0]} -p pruned_fastqs/${reads[1]} ${reads[0]} ${reads[1]}
-
-"""
-
-}
-
-// Post-Cutadapt QC
-process QC_POST_CUTADAPT {
   tag { sample_id }
-
-  publishDir "${params.output_dir}/fastqc/post_cutadapt",
-    mode: 'copy',
-    pattern: "*.html"
+  publishDir "${params.output_dir}/pruned_fastqs",
+  mode:'copy', 
+  pattern: '*.f*q.gz' 
   
   input:
   tuple(val(sample_id), path(reads) )
+  path('adapter_file.fas')
 
   output:
-  path('*.html')
-  tuple(val(sample_id), path("${sample_id}_R1_fastqc.txt"), path("${sample_id}_R2_fastqc.txt"), emit: qc_post_trimming_files)
-  tuple(path("${r1_prefix}_fastqc_data"), path("${r2_prefix}_fastqc_data"), emit: fastqc_directories)
-
+  tuple(val(sample_id), path('pruned_fastqs/*.f*q.gz') )
+  
   script:
-  r1_prefix = reads[0].baseName.replaceFirst(/\\.gz$/, '').split('\\.')[0..-2].join('.')
-  r2_prefix = reads[1].baseName.replaceFirst(/\\.gz$/, '').split('\\.')[0..-2].join('.')
-  """
-  fastqc ${reads[0]} ${reads[1]} --extract
-  # rename files
-  mv ${r1_prefix}_fastqc/summary.txt ${sample_id}_R1_fastqc.txt
-  mv ${r2_prefix}_fastqc/summary.txt ${sample_id}_R2_fastqc.txt
+  if (params.single_read) {
 
-  # move files for fastqc
-  mkdir ${r1_prefix}_fastqc_data
-  mkdir ${r2_prefix}_fastqc_data
-  mv ${r1_prefix}_fastqc/fastqc_data.txt ${r1_prefix}_fastqc_data
-  mv ${r2_prefix}_fastqc/fastqc_data.txt ${r2_prefix}_fastqc_data
-  """
+    """
+    mkdir pruned_fastqs
+    cutadapt -m 50 -j 2 -a file:'adapter_file.fas' -o pruned_fastqs/${reads[0]} ${reads[0]}
+    """
+  } else {
+    """
+    mkdir pruned_fastqs
+    cutadapt -m 50 -j 2 -a file:'adapter_file.fas' -A file:'adapter_file.fas' -o pruned_fastqs/${reads[0]}  -p pruned_fastqs/${reads[1]} ${reads[0]} ${reads[1]}
+    """
+  }
+
 }
 
 //FastQC MultiQC
