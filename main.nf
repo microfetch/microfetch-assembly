@@ -17,7 +17,10 @@ final_params = check_params(merged_params)
 // starting pipeline
 pipeline_start_message(version, final_params)
 
-include {GENOME_SIZE_ESTIMATION; WRITE_OUT_EXCLUDED_GENOMES; PRE_SCREEN_FASTQ_FILESIZE; WRITE_OUT_FILESIZE_CHECK; DETERMINE_MIN_READ_LENGTH; QC_PRE_TRIMMING; TRIMMING; CUTADAPT; QC_POST_TRIMMING; FASTQC_MULTIQC; SPECIES_IDENTIFICATION; READ_CORRECTION} from './modules/processes' addParams(final_params)
+include {GENOME_SIZE_ESTIMATION; PRE_SCREEN_FASTQ_FILESIZE; WRITE_OUT_FILESIZE_CHECK; DETERMINE_MIN_READ_LENGTH; QC_PRE_TRIMMING; TRIMMING; CUTADAPT; QC_POST_TRIMMING; FASTQC_MULTIQC; SPECIES_IDENTIFICATION; READ_CORRECTION} from './modules/processes' addParams(final_params)
+
+include {PRESCREEN_GENOME_SIZE_WORKFLOW; PRE_SCREEN_FASTQ_FILESIZE_WORKFLOW} from './modules/workflows' addParams(final_params)
+
 
 workflow {
     if (final_params.single_read){
@@ -36,29 +39,11 @@ workflow {
     genome_sizes = GENOME_SIZE_ESTIMATION.out.map { sample_id, file -> find_genome_size(sample_id, file.text) }
     // pre-screen check based on genome size
     if (final_params.prescreen_genome_size_check) {
-        // excluded genomes
-        excluded_genomes_based_on_size = genome_sizes.filter { it[1] > final_params.prescreen_genome_size_check }
-        WRITE_OUT_EXCLUDED_GENOMES(excluded_genomes_based_on_size)
-
-        included_genomes_based_on_size = genome_sizes.filter { it[1] <= final_params.prescreen_genome_size_check }
-        sample_id_and_reads = sample_id_and_reads
-                .join(included_genomes_based_on_size)
-                .map { items -> [items[0], items[1]] }
+        sample_id_and_reads = PRESCREEN_GENOME_SIZE_WORKFLOW(genome_sizes, sample_id_and_reads)
     }
     // pre screen check based on file size
     if (final_params.prescreen_file_size_check){
-        PRE_SCREEN_FASTQ_FILESIZE(sample_id_and_reads)
-        // filter files based on size
-        // included genomes
-        included_genomes_based_on_file_size = PRE_SCREEN_FASTQ_FILESIZE.out.filter { it[1].toFloat() >= final_params.prescreen_file_size_check }
-        // excluded genomes
-        excluded_genomes_based_on_file_size = PRE_SCREEN_FASTQ_FILESIZE.out.filter { it[1].toFloat() < final_params.prescreen_file_size_check }
-
-        WRITE_OUT_FILESIZE_CHECK(PRE_SCREEN_FASTQ_FILESIZE.out)
-
-        sample_id_and_reads = sample_id_and_reads
-            .join(included_genomes_based_on_file_size)
-            .map { items -> [items[0], items[1]] } 
+        sample_id_and_reads = PRE_SCREEN_FASTQ_FILESIZE_WORKFLOW(sample_id_and_reads)
     }
     // Assess read length and make MIN LEN for trimmomatic 1/3 of this value
     DETERMINE_MIN_READ_LENGTH(sample_id_and_reads)
