@@ -399,7 +399,6 @@ process qc_post_trimming {
 }
 
 
-// >>>>>>>>>> COLOMBIA PROCESS
 //FastQC MultiQC
 process fastqc_multiqc {
   tag { 'multiqc for fastqc' }
@@ -423,9 +422,6 @@ process fastqc_multiqc {
 
 }
 
-// <<<<<<<<<< COLOMBIA PROCESS
-
-// >>>>>>>>>> NIGERIA PROCESS
 // Species ID
 process species_identification {
   tag{pair_id}
@@ -442,7 +438,6 @@ process species_identification {
   """
 
 }
-// <<<<<<<<<< NIGERIA PROCESS
 
 // Genome Size Estimation
 process genome_size_estimation {
@@ -466,8 +461,6 @@ mash_output.map { pair_id, file -> find_genome_size(pair_id, file.text) }.into{g
 
 trimmed_fastqs_and_genome_size = trimmed_fastqs_for_correction.join(genome_size_estimation_for_read_correction).map{ tuple -> [tuple[0], tuple[1], tuple[2]]}
 
-
-// >>>>>>>>>> INDIA PROCESS
 // Read Corection
 process read_correction {
   tag { pair_id }
@@ -494,7 +487,6 @@ process read_correction {
   done
   """
 }
-// <<<<<<<<<< INDIA PROCESS
 
 def find_average_depth(pair_id, lighter_output){
   m = lighter_output =~  /.+Average coverage is ([0-9]+\.[0-9]+)\s.+/
@@ -502,7 +494,6 @@ def find_average_depth(pair_id, lighter_output){
   return [pair_id, average_depth]
 }
 
-// >>>>>>>>>> PHILIPPINES PROCESS
 // Check for contamination
 process check_for_contamination {
   tag {pair_id}
@@ -530,8 +521,8 @@ process check_for_contamination {
   }
 
 }
-// <<<<<<<<<< PHILIPPINES PROCESS
 
+// >>>>>>>>>> INDIA PROCESS
 // Estimate total number of bases
 process count_number_of_bases {
   tag { pair_id }
@@ -554,6 +545,7 @@ def find_total_number_of_bases(pair_id, seqtk_fqchk_ouput){
 }
 base_counts = seqtk_fqchk_output.map { pair_id, file -> find_total_number_of_bases(pair_id, file.text) }
 corrected_fastqs_and_genome_size_and_base_count = corrected_fastqs_for_merging.join(genome_size_estimation_for_downsampling).join(base_counts).map{ tuple -> [tuple[0], tuple[1], tuple[2], tuple[3]]}
+
 
 // merge reads and potentially downsample
 process merge_reads{
@@ -588,9 +580,11 @@ process merge_reads{
   }
 
 }
+// <<<<<<<<<< INDIA PROCESS
 
- min_read_length_and_raw_fastqs = min_read_length_for_assembly.join(merged_fastqs)
+min_read_length_and_raw_fastqs = min_read_length_for_assembly.join(merged_fastqs)
 
+// >>>>>>>>>> NIGERIA PROCESS
 // assemble reads
 process spades_assembly {
   memory { 4.GB * task.attempt }
@@ -646,7 +640,9 @@ process filter_scaffolds {
   """
 
 }
+// <<<<<<<<<< NIGERIA PROCESS
 
+// >>>>>>>>>> COLOMBIA PROCESS
 // assess assembly with Quast
 process quast {
   tag { pair_id }
@@ -715,6 +711,7 @@ process quast_multiqc {
   """
 
 }
+// <<<<<<<<<< COLOMBIA PROCESS
 
 // determine overall quality of sample
 if (params.qc_conditions) {
