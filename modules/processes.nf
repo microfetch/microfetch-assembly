@@ -271,3 +271,31 @@ process READ_CORRECTION {
   done
   """
 }
+
+
+process CHECK_FOR_CONTAMINATION {
+  tag {sample_id}
+  cpus 2
+
+  publishDir "${params.output_dir}/confindr",
+    mode: 'copy',
+    saveAs: { file -> "${sample_id}_${file}"}
+
+  input:
+  tuple(val(sample_id), path(file_pair))
+
+  output:
+  tuple(val(sample_id), path('confindr_report.csv'))
+
+  script:
+  if (file_pair[0] =~ /_R1/){ // files with _R1 and _R2
+    """
+    confindr.py -i . -o . -d /confindr_database -t 2 -bf 0.025 -b 2 --cross_detail -Xmx 1500m
+    """
+  } else { // files with _1 and _2
+    """
+    confindr.py -i . -o . -d  /confindr_database -t 2 -bf 0.025 -b 2 --cross_detail -Xmx 1500m -fid _1 -rid _2
+    """  
+  }
+
+}

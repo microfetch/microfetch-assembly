@@ -16,7 +16,6 @@ def default_params(){
     params.careful = false
     params.minimum_scaffold_length = false
     params.minimum_scaffold_depth = false
-    params.confindr_db_path = false
     params.qc_conditions = false
     params.prescreen_genome_size_check = false
     params.prescreen_file_size_check = 5
@@ -42,6 +41,7 @@ def check_params(Map params) {
     if (!final_params.adapter_file.startsWith("/")){
         final_params.adapter_file = "${baseDir}/${final_params.adapter_file}"
     }
+
     // // assign depth_cutoff from params
     // depth_cutoff = params.depth_cutoff
 
@@ -64,13 +64,7 @@ def check_params(Map params) {
     // minimum_scaffold_depth = 3
     // }
 
-    // // set up confindr database path
-    // if ( params.confindr_db_path ) {
-    // confindr_db_path = params.confindr_db_path
-    // } else {
-    // // path in Docker image
-    // confindr_db_path = "/home/bio/software_data/confindr_database"
-    // }
+
 
 
 

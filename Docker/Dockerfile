@@ -19,6 +19,9 @@ RUN conda env create -f /assembly.yml && conda clean -a
 COPY requirements.txt /
 RUN pip install -r /requirements.txt
 
+COPY confindr_database.tar.gz /confindr_database.tar.gz
+RUN tar xfz /confindr_database.tar.gz && rm /confindr_database.tar.gz
+
 COPY scripts/filter_contigs.py /usr/local/bin/
 
 ENV PATH  /opt/conda/envs/assembly/bin:/opt/conda/envs/quast/bin:/opt/conda/envs/confindr/bin:/opt/conda/envs/kat/bin:$PATH
