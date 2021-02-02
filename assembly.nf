@@ -643,6 +643,7 @@ process filter_scaffolds {
 // <<<<<<<<<< NIGERIA PROCESS
 
 // >>>>>>>>>> COLOMBIA PROCESS
+// Test git - OGB
 // assess assembly with Quast
 process quast {
   tag { pair_id }
