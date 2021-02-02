@@ -644,6 +644,8 @@ process filter_scaffolds {
 
 // >>>>>>>>>> COLOMBIA PROCESS
 // Test git - OGB
+//  test
+
 // assess assembly with Quast
 process quast {
   tag { pair_id }
