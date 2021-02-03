@@ -85,13 +85,14 @@ workflow {
 
     // >>>>>>>>>> NIGERIA SPADES_ASSEMBLY AND FILTER_SCAFFOLDS PROCESSES HERE
     if (final_params.single_read) {
-        min_read_length_and_raw_fastqs = DETERMINE_MIN_READ_LENGTH.out.join(TRIMMING.out)
+        min_read_length_and_fastqs = DETERMINE_MIN_READ_LENGTH.out.join(TRIMMING.out)
     } else {
         MERGE_READS(corrected_fastqs_and_genome_size_and_base_count)
-        min_read_length_and_raw_fastqs = DETERMINE_MIN_READ_LENGTH.out.join(MERGE_READS.out)
+        MERGE_READS.out.view()
+        min_read_length_and_fastqs = DETERMINE_MIN_READ_LENGTH.out.join(MERGE_READS.out)
     }
 
-    SPADES_ASSEMBLY(min_read_length_and_raw_fastqs)
+    SPADES_ASSEMBLY(min_read_length_and_fastqs)
 
     FILTER_SCAFFOLDS(SPADES_ASSEMBLY.out)    
 
