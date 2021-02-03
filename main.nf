@@ -2,7 +2,7 @@ nextflow.enable.dsl=2
 include {help_message; version_message; complete_message; error_message; pipeline_start_message} from './modules/messages'
 include {default_params; check_params } from './modules/params_parser'
 include {help_or_version} from './modules/params_utilities'
-include {find_genome_size} from './modules/process_utilities'
+include {find_genome_size; find_total_number_of_bases} from './modules/process_utilities'
 
 version = '2.0.0'
 
@@ -17,7 +17,7 @@ final_params = check_params(merged_params)
 // starting pipeline
 pipeline_start_message(version, final_params)
 
-include {GENOME_SIZE_ESTIMATION; PRE_SCREEN_FASTQ_FILESIZE; WRITE_OUT_FILESIZE_CHECK; DETERMINE_MIN_READ_LENGTH; QC_PRE_TRIMMING; TRIMMING; CUTADAPT; QC_POST_TRIMMING; FASTQC_MULTIQC; SPECIES_IDENTIFICATION; READ_CORRECTION; CHECK_FOR_CONTAMINATION} from './modules/processes' addParams(final_params)
+include {GENOME_SIZE_ESTIMATION; PRE_SCREEN_FASTQ_FILESIZE; WRITE_OUT_FILESIZE_CHECK; DETERMINE_MIN_READ_LENGTH; QC_PRE_TRIMMING; TRIMMING; CUTADAPT; QC_POST_TRIMMING; FASTQC_MULTIQC; SPECIES_IDENTIFICATION; READ_CORRECTION; CHECK_FOR_CONTAMINATION; COUNT_NUMBER_OF_BASES; MERGE_READS; SPADES_ASSEMBLY; FILTER_SCAFFOLDS} from './modules/processes' addParams(final_params)
 
 include {PRESCREEN_GENOME_SIZE_WORKFLOW; PRE_SCREEN_FASTQ_FILESIZE_WORKFLOW} from './modules/workflows' addParams(final_params)
 
@@ -36,7 +36,7 @@ workflow {
     }
 
     GENOME_SIZE_ESTIMATION(sample_id_and_reads)
-    genome_sizes = GENOME_SIZE_ESTIMATION.out.map { sample_id, file -> find_genome_size(sample_id, file.text) }
+    genome_sizes = GENOME_SIZE_ESTIMATION.out.map { sample_id, path -> find_genome_size(sample_id, path.text) }
     // pre-screen check based on genome size
     if (final_params.prescreen_genome_size_check) {
         sample_id_and_reads = PRESCREEN_GENOME_SIZE_WORKFLOW(genome_sizes, sample_id_and_reads)
@@ -77,8 +77,26 @@ workflow {
 
     // >>>>>>>>>> INDIA COUNT_NUMBER_OF_BASES AND MERGE_READS PROCESSES HERE
 
+    COUNT_NUMBER_OF_BASES(TRIMMING.out)
+
+    base_counts = COUNT_NUMBER_OF_BASES.out.map { sample_id, path -> find_total_number_of_bases(sample_id, path.text) }
+
+    corrected_fastqs_and_genome_size_and_base_count = READ_CORRECTION.out.join(genome_sizes).join(base_counts).map{ tuple -> [tuple[0], tuple[1], tuple[2], tuple[3]]}
+
     // >>>>>>>>>> NIGERIA SPADES_ASSEMBLY AND FILTER_SCAFFOLDS PROCESSES HERE
+    if (final_params.single_read) {
+        min_read_length_and_raw_fastqs = DETERMINE_MIN_READ_LENGTH.out.join(TRIMMING.out)
+    } else {
+        MERGE_READS(corrected_fastqs_and_genome_size_and_base_count)
+        min_read_length_and_raw_fastqs = DETERMINE_MIN_READ_LENGTH.out.join(MERGE_READS.out)
+    }
+
+    SPADES_ASSEMBLY(min_read_length_and_raw_fastqs)
+
+    FILTER_SCAFFOLDS(SPADES_ASSEMBLY.out)    
 
     // >>>>>>>>>> COLOMBIA QUAST, QUAST_SUMMARY AND QUAST_MULTIQC PROCESSES HERE
+
+
 
 }

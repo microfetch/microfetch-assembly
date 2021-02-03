@@ -299,3 +299,119 @@ process CHECK_FOR_CONTAMINATION {
   }
 
 }
+
+// >>>>>>>>>> INDIA PROCESS (Done by Nigeria due to dependencies)
+// Estimate total number of bases
+process COUNT_NUMBER_OF_BASES {
+  tag { sample_id }
+  
+  input:
+  tuple(val(sample_id), path(reads)) // from trimmed_fastqs_for_base_counting i.e TRIMMING.out
+
+  output:
+  tuple(val(sample_id), path('seqtk_fqchk.out')) // into seqtk_fqchk_output
+
+  """
+  seqtk fqchk -q 25 ${reads[0]} > seqtk_fqchk.out
+  """
+}
+
+// merge reads and potentially downsample
+process MERGE_READS{
+  tag { sample_id }
+
+  if (params.full_output){
+    publishDir "${params.output_dir}",
+      mode: 'copy',
+      pattern: "merged_fastqs/*.fastq.gz"
+  }
+  
+  input:
+  tuple(val(sample_id), path(reads), val(genome_size), val(base_count)) // from corrected_fastqs_and_genome_size_and_base_count
+
+  output:
+  tuple(val(sample_id), path('merged_fastqs/*.fastq.gz')) // into merged_fastqs
+
+  script:
+  
+  depth_cutoff = params.depth_cutoff
+  if (depth_cutoff  && base_count/genome_size > depth_cutoff.toInteger()){
+    downsampling_factor = depth_cutoff.toInteger()/(base_count/genome_size)
+    """
+    mkdir downsampled_fastqs
+    seqtk sample  -s 12345 ${reads[0]} ${downsampling_factor} | gzip > downsampled_fastqs/${reads[0]}
+    seqtk sample  -s 12345 ${reads[1]} ${downsampling_factor} | gzip > downsampled_fastqs/${reads[1]}
+    flash -m 20 -M 100 -t 1 -d merged_fastqs -o ${sample_id} -z downsampled_fastqs/${reads[0]} downsampled_fastqs/${reads[1]} 
+    """
+  } else {
+    """
+    flash -m 20 -M 100 -t 1 -d merged_fastqs -o ${sample_id} -z ${reads[0]} ${reads[1]} 
+    """
+  }
+
+}
+// <<<<<<<<<< INDIA PROCESS (Done by Nigeria due to dependencies)
+
+// >>>>>>>>>> NIGERIA PROCESS
+
+process SPADES_ASSEMBLY {
+  memory { 4.GB * task.attempt }
+  
+  tag { sample_id }
+
+  input:
+  tuple(val(sample_id), val(min_read_length), path(reads)) // from min_read_length_and_raw_fastqs
+  
+  output:
+  tuple(val(sample_id), path("scaffolds.fasta")) // into scaffolds
+
+  script:
+  
+  spades_memory = 4 * task.attempt
+  
+  if (min_read_length.toInteger() < 25 ) { // this is the read length divided by 3 see trimming step
+    kmers = '21,33,43,53'
+  }
+  else if (min_read_length.toInteger() < 50) {
+    kmers = '21,33,43,53,63,75'
+  } else {
+    kmers = '21,33,43,55,77,99'
+  }
+
+  if (params.careful) {
+    careful = "--careful"
+  } else {
+    careful = ""
+  }
+
+  if (params.single_read) {
+    """
+    spades.py --s1 ${reads} --only-assembler ${careful} -o . --tmp-dir /tmp/${sample_id}_assembly -k ${kmers} --threads 1 --memory ${spades_memory}
+    """
+  } else {
+    """
+    spades.py --pe1-1 ${reads[1]} --pe1-2 ${reads[2]} --pe1-m ${reads[0]} --only-assembler ${careful} -o . --tmp-dir /tmp/${sample_id}_assembly -k ${kmers} --threads 1 --memory ${spades_memory}
+    """
+  }
+  
+}
+
+// filter scaffolds to remove small and low coverage contigs
+process FILTER_SCAFFOLDS {
+  tag { sample_id }
+
+  input:
+  tuple(val(sample_id), path(scaffold_file)) // from scaffolds i.e SPADES_ASSEMBLY.out
+
+  output:
+  tuple(val(sample_id), path("${sample_id}.fasta"), emit: scaffolds_for_single_analysis) // into scaffolds_for_single_analysis, scaffolds_for_qc
+  path("${sample_id}.fasta"), emit: scaffolds_for_combined_analysis // into scaffolds_for_combined_analysis
+  
+  script:
+  """
+  contig-tools filter -l ${params.minimum_scaffold_length} -c ${params.minimum_scaffold_depth} -f ${scaffold_file}
+  ln -s scaffolds.filter_gt_${params.minimum_scaffold_length}bp_gt_${params.minimum_scaffold_depth}.0cov.fasta ${sample_id}.fasta
+  """
+
+}
+// <<<<<<<<<< NIGERIA PROCESS
