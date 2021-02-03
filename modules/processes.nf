@@ -408,9 +408,21 @@ process FILTER_SCAFFOLDS {
   path("${sample_id}.fasta"), emit: scaffolds_for_combined_analysis // into scaffolds_for_combined_analysis
   
   script:
+  // assign minimum scaffold length
+  if ( params.minimum_scaffold_length ) {
+    minimum_scaffold_length = params.minimum_scaffold_length
+  } else {
+    minimum_scaffold_length = 500
+  }
+  // assign minimum scaffold depth
+  if ( params.minimum_scaffold_depth ) {
+    minimum_scaffold_depth = params.minimum_scaffold_depth
+  } else {
+    minimum_scaffold_depth = 3
+  }
   """
-  contig-tools filter -l ${params.minimum_scaffold_length} -c ${params.minimum_scaffold_depth} -f ${scaffold_file}
-  ln -s scaffolds.filter_gt_${params.minimum_scaffold_length}bp_gt_${params.minimum_scaffold_depth}.0cov.fasta ${sample_id}.fasta
+  contig-tools filter -l ${minimum_scaffold_length} -c ${minimum_scaffold_depth} -f ${scaffold_file}
+  ln -s scaffolds.filter_gt_${minimum_scaffold_length}bp_gt_${minimum_scaffold_depth}.0cov.fasta ${sample_id}.fasta
   """
 
 }
