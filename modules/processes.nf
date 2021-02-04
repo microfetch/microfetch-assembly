@@ -299,3 +299,72 @@ process CHECK_FOR_CONTAMINATION {
   }
 
 }
+
+process COUNT_NUMBER_OF_BASES {
+  tag {sample_id}
+
+  input:
+  tuple(val(sample_id), path(reads))
+
+  output:
+  tuple(val(sample_id), path('seqtk_fqchk.out') )
+
+  script:
+  if (params.single_read) {
+  """
+  seqtk fqchk -q 25 ${reads[0]} > seqtk_fqchk.out
+  """
+  }
+  else{
+  """
+  seqtk fqchk -q 25 ${reads[0]} > seqtk_fqchk.out
+  """
+  }
+}
+
+process MERGE_READS {
+  tag {sample_id}
+
+  if (params.full_output){
+    publishDir "${params.output_dir}",
+      mode: "copy",
+      pattern: "merged_fastqs/*.fastq.gz"
+  }
+  
+  input:
+  tuple(val(sample_id), path(reads), genome_size, base_count)
+
+  output:
+  tuple(val(sample_id), path("merged_fastqs/*.f*q.gz") )
+
+  script:
+  if params.single_read{
+    if (depth_cutoff  && base_count/genome_size > depth_cutoff.toInteger()){
+    downsampling_factor = depth_cutoff.toInteger()/(base_count/genome_size)
+    """
+    mkdir downsampled_fastqs
+    seqtk sample  -s 12345 ${reads[0]} ${downsampling_factor} | gzip > downsampled_fastqs/${reads[0]}
+    flash -m 20 -M 100 -t 1 -d merged_fastqs -o ${sample_id} -z downsampled_fastqs/${reads[0]} 
+    """
+    } else {
+    """
+    flash -m 20 -M 100 -t 1 -d merged_fastqs -o ${sample_id} -z ${reads[0]} 
+    """
+    }
+  }
+  else{
+    if (depth_cutoff  && base_count/genome_size > depth_cutoff.toInteger()){
+    downsampling_factor = depth_cutoff.toInteger()/(base_count/genome_size)
+    """
+    mkdir downsampled_fastqs
+    seqtk sample  -s 12345 ${reads[0]} ${downsampling_factor} | gzip > downsampled_fastqs/${reads[0]}
+    seqtk sample  -s 12345 ${reads[1]} ${downsampling_factor} | gzip > downsampled_fastqs/${reads[1]}
+    flash -m 20 -M 100 -t 1 -d merged_fastqs -o ${sample_id} -z downsampled_fastqs/${reads[0]} downsampled_fastqs/${reads[1]} 
+    """
+    } else {
+    """
+    flash -m 20 -M 100 -t 1 -d merged_fastqs -o ${sample_id} -z ${reads[0]} ${reads[1]} 
+    """
+    }
+  }
+}
