@@ -3,3 +3,4 @@ test_*
 work
 assembly_output
 .vscode
+nxf-tmp*
