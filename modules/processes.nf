@@ -425,3 +425,71 @@ process FILTER_SCAFFOLDS {
   """
 
 }
+
+// assess assembly with Quast
+process QUAST {
+  tag { sample_id }
+    
+  publishDir "${params.output_dir}/quast",
+    mode: 'copy',
+    pattern: "report.tsv",
+    saveAs: { file -> "${sample_id}_quast_" + file.split('\\/')[-1] }
+
+  input:
+  tuple(val(sample_id), file(contig_file))
+
+  output:
+  tuple(val(sample_id), file("${sample_id}"), emit: quast_files) 
+  tuple(val(sample_id), file("${sample_id}/report.tsv"), emit: quast_report)  
+
+  """
+  quast.py ${contig_file} -o .
+  mkdir ${sample_id}
+  ln -s \$PWD/report.tsv ${sample_id}/report.tsv
+  """
+}
+
+
+// assess assembly with Quast but in a single file
+process QUAST_SUMMARY {
+  tag { 'quast summary' }
+  memory { 4.GB * task.attempt }
+  
+  publishDir "${params.output_dir}/quast",
+    mode: 'copy',
+    pattern: "*report.tsv",
+    saveAs: { file -> "combined_${file}"}
+
+  input:
+  file(contig_files)
+
+  output:
+  file("*report.tsv") optional true
+
+  """
+  quast.py ${contig_files} -o .
+  """
+}
+
+
+// QUAST MultiQC
+process QUAST_MULTIQC {
+  tag { 'multiqc for quast' }
+  memory { 4.GB * task.attempt }
+
+  publishDir "${params.output_dir}/quality_reports",
+    mode: 'copy',
+    pattern: "multiqc_report.html",
+    saveAs: { "quast_multiqc_report.html" }
+
+  input:
+  file(quast_files) 
+
+  output:
+  file("multiqc_report.html")
+
+  script:
+  """
+  multiqc --interactive .
+  """
+}
