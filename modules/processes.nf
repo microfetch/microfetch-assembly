@@ -310,19 +310,18 @@ process COUNT_NUMBER_OF_BASES {
   tuple(val(sample_id), path('seqtk_fqchk.out') )
 
   script:
-
   """
   seqtk fqchk -q 25 ${reads[0]} > seqtk_fqchk.out
   """
-
 }
 
-process MERGE_READS {
-  tag {sample_id}
+// merge reads and potentially downsample
+process MERGE_READS{
+  tag { sample_id }
 
   if (params.full_output){
     publishDir "${params.output_dir}",
-      mode: "copy",
+      mode: 'copy',
       pattern: "merged_fastqs/*.fastq.gz"
   }
   
@@ -351,6 +350,66 @@ process MERGE_READS {
     done
   fi
   flash -m 20 -M 100 -t 1 -d merged_fastqs -o ${sample_id} ${flash_argument}
+  """
+}
+
+process SPADES_ASSEMBLY {
+  memory { 4.GB * task.attempt }
+  
+  tag { sample_id }
+
+  input:
+  tuple(val(sample_id), val(min_read_length), path(reads)) // from min_read_length_and_raw_fastqs
+  
+  output:
+  tuple(val(sample_id), path("scaffolds.fasta")) // into scaffolds
+
+  script:
+  
+  spades_memory = 4 * task.attempt
+  
+  if (min_read_length.toInteger() < 25 ) { // this is the read length divided by 3 see trimming step
+    kmers = '21,33,43,53'
+  }
+  else if (min_read_length.toInteger() < 50) {
+    kmers = '21,33,43,53,63,75'
+  } else {
+    kmers = '21,33,43,55,77,99'
+  }
+
+  if (params.careful) {
+    careful = "--careful"
+  } else {
+    careful = ""
+  }
+
+  if (params.single_read) {
+    """
+    spades.py --s1 ${reads} --only-assembler ${careful} -o . --tmp-dir /tmp/${sample_id}_assembly -k ${kmers} --threads 1 --memory ${spades_memory}
+    """
+  } else {
+    """
+    spades.py --pe1-1 ${reads[1]} --pe1-2 ${reads[2]} --pe1-m ${reads[0]} --only-assembler ${careful} -o . --tmp-dir /tmp/${sample_id}_assembly -k ${kmers} --threads 1 --memory ${spades_memory}
+    """
+  }
+  
+}
+
+// filter scaffolds to remove small and low coverage contigs
+process FILTER_SCAFFOLDS {
+  tag { sample_id }
+
+  input:
+  tuple(val(sample_id), path(scaffold_file)) // from scaffolds i.e SPADES_ASSEMBLY.out
+
+  output:
+  tuple(val(sample_id), path("${sample_id}.fasta"), emit: scaffolds_for_single_analysis) // into scaffolds_for_single_analysis, scaffolds_for_qc
+  path("${sample_id}.fasta"), emit: scaffolds_for_combined_analysis // into scaffolds_for_combined_analysis
+  
+  script:
+  """
+  contig-tools filter -l ${params.minimum_scaffold_length} -c ${params.minimum_scaffold_depth} -f ${scaffold_file}
+  ln -s scaffolds.filter_gt_${params.minimum_scaffold_length}bp_gt_${params.minimum_scaffold_depth}.0cov.fasta ${sample_id}.fasta
   """
 
 }
