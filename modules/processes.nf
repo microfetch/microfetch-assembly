@@ -315,7 +315,38 @@ process COUNT_NUMBER_OF_BASES {
   """
 }
 
-// merge reads and potentially downsample
+//Downsample reads
+process DOWNSAMPLE_READS{
+  tag { sample_id }
+
+  input:
+  tuple(val(sample_id), path(reads), val(genome_size), val(base_count))
+
+  output:
+  tuple(val(sample_id), path("downsampled_fastqs/*.f*q.gz") )
+
+  script:
+  if (params.depth_cutoff  && base_count/genome_size > params.depth_cutoff.toInteger()){
+    downsampling_factor = params.depth_cutoff.toInteger()/(base_count/genome_size)
+  } else {
+    downsampling_factor= null
+  }
+  """
+  DOWNSAMPLING_FACTOR=${downsampling_factor}
+  mkdir downsampled_fastqs
+  for READ_FILE in ${reads}
+  do
+    if [[ -z \$DOWNSAMPLING_FACTOR ]]
+    then
+      # if no downsampling then just move input fastq to output location
+      mv \${READ_FILE} downsampled_fastqs/\${READ_FILE}
+    else
+      seqtk sample  -s 12345 \${READ_FILE} ${downsampling_factor} | gzip > downsampled_fastqs/\${READ_FILE}
+    fi
+  done
+  """
+}
+// merge reads 
 process MERGE_READS{
   tag { sample_id }
 
@@ -326,30 +357,14 @@ process MERGE_READS{
   }
   
   input:
-  tuple(val(sample_id), path(reads), val(genome_size), val(base_count))
+  tuple(val(sample_id), path(reads))
 
   output:
   tuple(val(sample_id), path("merged_fastqs/*.f*q.gz") )
 
   script:
-    if (params.depth_cutoff  && base_count/genome_size > params.depth_cutoff.toInteger()){
-      downsampling_factor = params.depth_cutoff.toInteger()/(base_count/genome_size)
-      flash_argument = "-z downsampled_fastqs/${reads[0]} downsampled_fastqs/${reads[1]}"
-    } else {
-      downsampling_factor= null
-      flash_argument = "-z ${reads[0]} ${reads[1]}"
-    }
   """
-  DOWNSAMPLING_FACTOR=${downsampling_factor}
-  if [[ ! -z \$DOWNSAMPLING_FACTOR ]]
-  then
-    mkdir downsampled_fastqs
-    for read_file in ${reads}
-    do
-      seqtk sample  -s 12345 \${read_file} \$downsampling_factor | gzip > downsampled_fastqs/\${read_file}
-    done
-  fi
-  flash -m 20 -M 100 -t 1 -d merged_fastqs -o ${sample_id} ${flash_argument}
+  flash -m 20 -M 100 -t 1 -d merged_fastqs -o ${sample_id} -z ${reads[0]} ${reads[1]}
   """
 }
 
@@ -365,9 +380,7 @@ process SPADES_ASSEMBLY {
   tuple(val(sample_id), path("scaffolds.fasta")) // into scaffolds
 
   script:
-  
   spades_memory = 4 * task.attempt
-  
   if (min_read_length.toInteger() < 25 ) { // this is the read length divided by 3 see trimming step
     kmers = '21,33,43,53'
   }
@@ -384,15 +397,14 @@ process SPADES_ASSEMBLY {
   }
 
   if (params.single_read) {
-    """
-    spades.py --s1 ${reads} --only-assembler ${careful} -o . --tmp-dir /tmp/${sample_id}_assembly -k ${kmers} --threads 1 --memory ${spades_memory}
-    """
+    reads_argument = "--s1 ${reads}"
   } else {
-    """
-    spades.py --pe1-1 ${reads[1]} --pe1-2 ${reads[2]} --pe1-m ${reads[0]} --only-assembler ${careful} -o . --tmp-dir /tmp/${sample_id}_assembly -k ${kmers} --threads 1 --memory ${spades_memory}
-    """
+    reads_argument = "--pe1-1 ${reads[1]} --pe1-2 ${reads[2]} --pe1-m ${reads[0]}"
   }
-  
+
+  """
+  spades.py ${reads_argument} --only-assembler ${careful} -o . --tmp-dir /tmp/${sample_id}_assembly -k ${kmers} --threads 1 --memory ${spades_memory}
+  """
 }
 
 // filter scaffolds to remove small and low coverage contigs
@@ -400,11 +412,11 @@ process FILTER_SCAFFOLDS {
   tag { sample_id }
 
   input:
-  tuple(val(sample_id), path(scaffold_file)) // from scaffolds i.e SPADES_ASSEMBLY.out
+  tuple(val(sample_id), path(scaffold_file))
 
   output:
-  tuple(val(sample_id), path("${sample_id}.fasta"), emit: scaffolds_for_single_analysis) // into scaffolds_for_single_analysis, scaffolds_for_qc
-  path("${sample_id}.fasta"), emit: scaffolds_for_combined_analysis // into scaffolds_for_combined_analysis
+  tuple(val(sample_id), path("${sample_id}.fasta"), emit: scaffolds_for_single_analysis)
+  path("${sample_id}.fasta"), emit: scaffolds_for_combined_analysis
   
   script:
   """
