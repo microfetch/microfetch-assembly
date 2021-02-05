@@ -436,11 +436,11 @@ process QUAST {
     saveAs: { file -> "${sample_id}_quast_" + file.split('\\/')[-1] }
 
   input:
-  tuple(val(sample_id), file(contig_file))
+  tuple(val(sample_id), path(contig_file))
 
   output:
-  tuple(val(sample_id), file("${sample_id}"), emit: quast_files) 
-  tuple(val(sample_id), file("${sample_id}/report.tsv"), emit: quast_report)  
+  path("${sample_id}"), emit: quast_dir
+  path("${sample_id}/report.tsv"), emit: quast_report 
 
   """
   quast.py ${contig_file} -o .
@@ -461,10 +461,10 @@ process QUAST_SUMMARY {
     saveAs: { file -> "combined_${file}"}
 
   input:
-  file(contig_files)
+  path(contig_files)
 
   output:
-  file("*report.tsv") optional true
+  path("*report.tsv") optional true
 
   """
   quast.py ${contig_files} -o .
@@ -483,10 +483,10 @@ process QUAST_MULTIQC {
     saveAs: { "quast_multiqc_report.html" }
 
   input:
-  file(quast_files) 
+  path(quast_files) 
 
   output:
-  file("multiqc_report.html")
+  path("multiqc_report.html")
 
   script:
   """

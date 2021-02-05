@@ -99,8 +99,7 @@ workflow {
 
     FILTER_SCAFFOLDS(SPADES_ASSEMBLY.out)    
 
-    QUAST(FILTER_SCAFFOLDS.out)
-    // QUAST_SUMMARY(FILTER_SCAFFOLDS.out[2].collect(sort: {a, b -> a.getBaseName() <=> b.getBaseName()}))
-    QUAST_SUMMARY(QUAST.out.quast_files[2].collect(sort: {a, b -> a.getBaseName() <=> b.getBaseName()}))
-    QUAST_MULTIQC(QUAST.out.quast_files.collect())
+    QUAST(FILTER_SCAFFOLDS.out.scaffolds_for_single_analysis)
+    QUAST_SUMMARY(FILTER_SCAFFOLDS.out.scaffolds_for_combined_analysis.collect(sort: {a, b -> a.getBaseName() <=> b.getBaseName()}))
+    QUAST_MULTIQC(QUAST.out.quast_dir.collect())
 }
