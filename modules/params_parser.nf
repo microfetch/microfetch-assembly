@@ -42,8 +42,12 @@ def check_params(Map params) {
         final_params.adapter_file = "${baseDir}/${final_params.adapter_file}"
     }
 
-    // // assign depth_cutoff from params
-    // depth_cutoff = params.depth_cutoff
+    // assign depth_cutoff from params
+    if (params.depth_cutoff){
+        final_params.depth_cutoff = params.depth_cutoff
+    }else{
+        final_params.depth_cutoff = false
+    }
 
     // // set careful 
     // if (params.careful) {

@@ -332,14 +332,14 @@ process MERGE_READS {
   }
   
   input:
-  tuple(val(sample_id), path(reads), genome_size, base_count)
+  tuple(val(sample_id), path(reads), val(genome_size), val(base_count))
 
   output:
   tuple(val(sample_id), path("merged_fastqs/*.f*q.gz") )
 
   script:
-  if params.single_read{
-    if (depth_cutoff  && base_count/genome_size > depth_cutoff.toInteger()){
+  if (params.single_read){
+    if (params.depth_cutoff  && base_count/genome_size > depth_cutoff.toInteger()){
     downsampling_factor = depth_cutoff.toInteger()/(base_count/genome_size)
     """
     mkdir downsampled_fastqs
@@ -353,7 +353,7 @@ process MERGE_READS {
     }
   }
   else{
-    if (depth_cutoff  && base_count/genome_size > depth_cutoff.toInteger()){
+    if (params.depth_cutoff  && base_count/genome_size > depth_cutoff.toInteger()){
     downsampling_factor = depth_cutoff.toInteger()/(base_count/genome_size)
     """
     mkdir downsampled_fastqs
