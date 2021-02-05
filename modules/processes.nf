@@ -338,22 +338,12 @@ process MERGE_READS {
   tuple(val(sample_id), path("merged_fastqs/*.f*q.gz") )
 
   script:
-
-    if (params.single_read){
-    if (params.depth_cutoff  && base_count/genome_size > depth_cutoff.toInteger()){
-      downsampling_factor = depth_cutoff.toInteger()/(base_count/genome_size)
-      flash_argument = "-z downsampled_fastqs/${reads[0]}"
-    } else {
-      flash_argument = "-z ${reads[0]}"
-    }
-  } else {
     if (params.depth_cutoff  && base_count/genome_size > depth_cutoff.toInteger()){
       downsampling_factor = depth_cutoff.toInteger()/(base_count/genome_size)
       flash_argument = "-z downsampled_fastqs/${reads[0]} downsampled_fastqs/${reads[1]}"
     } else {
       flash_argument = "-z ${reads[0]} ${reads[1]}"
     }
-  }
   """
   mkdir downsampled_fastqs
   for read_file in ${reads}
@@ -363,34 +353,4 @@ process MERGE_READS {
   flash -m 20 -M 100 -t 1 -d merged_fastqs -o ${sample_id} ${flash_argument}
   """
 
-
-  // if (params.single_read){
-  //   if (params.depth_cutoff  && base_count/genome_size > depth_cutoff.toInteger()){
-  //   downsampling_factor = depth_cutoff.toInteger()/(base_count/genome_size)
-  //   """
-  //   mkdir downsampled_fastqs
-  //   seqtk sample  -s 12345 ${reads[0]} ${downsampling_factor} | gzip > downsampled_fastqs/${reads[0]}
-  //   flash -m 20 -M 100 -t 1 -d merged_fastqs -o ${sample_id} -z downsampled_fastqs/${reads[0]} 
-  //   """
-  //   } else {
-  //   """
-  //   flash -m 20 -M 100 -t 1 -d merged_fastqs -o ${sample_id} -z ${reads[0]} 
-  //   """
-  //   }
-  // }
-  // else{
-  //   if (params.depth_cutoff  && base_count/genome_size > depth_cutoff.toInteger()){
-  //   downsampling_factor = depth_cutoff.toInteger()/(base_count/genome_size)
-  //   """
-  //   mkdir downsampled_fastqs
-  //   seqtk sample  -s 12345 ${reads[0]} ${downsampling_factor} | gzip > downsampled_fastqs/${reads[0]}
-  //   seqtk sample  -s 12345 ${reads[1]} ${downsampling_factor} | gzip > downsampled_fastqs/${reads[1]}
-  //   flash -m 20 -M 100 -t 1 -d merged_fastqs -o ${sample_id} -z downsampled_fastqs/${reads[0]} downsampled_fastqs/${reads[1]} 
-  //   """
-  //   } else {
-  //   """
-  //   flash -m 20 -M 100 -t 1 -d merged_fastqs -o ${sample_id} -z ${reads[0]} ${reads[1]} 
-  //   """
-  //   }
-  // }
 }
