@@ -78,8 +78,12 @@ workflow {
 
     // >>>>>>>>>> INDIA COUNT_NUMBER_OF_BASES AND MERGE_READS PROCESSES HERE
     COUNT_NUMBER_OF_BASES(READ_CORRECTION.out)
+
+    ///base_counting
     base_counts = COUNT_NUMBER_OF_BASES.out.map { sample_id, file -> find_total_number_of_bases(sample_id, file.text) }
     corrected_fastqs_and_genome_size_and_base_count = READ_CORRECTION.out.join(genome_sizes).join(base_counts).map{ tuple -> [tuple[0], tuple[1], tuple[2], tuple[3]]}
+
+    ////Read merging for PE
     if (!final_params.single_read){
         MERGE_READS(corrected_fastqs_and_genome_size_and_base_count)
     }

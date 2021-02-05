@@ -310,16 +310,11 @@ process COUNT_NUMBER_OF_BASES {
   tuple(val(sample_id), path('seqtk_fqchk.out') )
 
   script:
-  if (params.single_read) {
+
   """
   seqtk fqchk -q 25 ${reads[0]} > seqtk_fqchk.out
   """
-  }
-  else{
-  """
-  seqtk fqchk -q 25 ${reads[0]} > seqtk_fqchk.out
-  """
-  }
+
 }
 
 process MERGE_READS {
@@ -338,18 +333,23 @@ process MERGE_READS {
   tuple(val(sample_id), path("merged_fastqs/*.f*q.gz") )
 
   script:
-    if (params.depth_cutoff  && base_count/genome_size > depth_cutoff.toInteger()){
-      downsampling_factor = depth_cutoff.toInteger()/(base_count/genome_size)
+    if (params.depth_cutoff  && base_count/genome_size > params.depth_cutoff.toInteger()){
+      downsampling_factor = params.depth_cutoff.toInteger()/(base_count/genome_size)
       flash_argument = "-z downsampled_fastqs/${reads[0]} downsampled_fastqs/${reads[1]}"
     } else {
+      downsampling_factor= null
       flash_argument = "-z ${reads[0]} ${reads[1]}"
     }
   """
-  mkdir downsampled_fastqs
-  for read_file in ${reads}
-  do
-    seqtk sample  -s 12345 \${read_file} \$downsampling_factor | gzip > downsampled_fastqs/\${read_file}
-  done
+  DOWNSAMPLING_FACTOR=${downsampling_factor}
+  if [[ ! -z \$DOWNSAMPLING_FACTOR ]]
+  then
+    mkdir downsampled_fastqs
+    for read_file in ${reads}
+    do
+      seqtk sample  -s 12345 \${read_file} \$downsampling_factor | gzip > downsampled_fastqs/\${read_file}
+    done
+  fi
   flash -m 20 -M 100 -t 1 -d merged_fastqs -o ${sample_id} ${flash_argument}
   """
 
