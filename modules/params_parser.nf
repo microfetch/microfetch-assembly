@@ -14,8 +14,8 @@ def default_params(){
     params.adapter_file = false
     params.depth_cutoff = false
     params.careful = false
-    params.minimum_scaffold_length = false
-    params.minimum_scaffold_depth = false
+    params.minimum_scaffold_length = 500
+    params.minimum_scaffold_depth = 3
     params.qc_conditions = false
     params.prescreen_genome_size_check = false
     params.prescreen_file_size_check = 5

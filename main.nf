@@ -88,7 +88,6 @@ workflow {
         min_read_length_and_fastqs = DETERMINE_MIN_READ_LENGTH.out.join(TRIMMING.out)
     } else {
         MERGE_READS(corrected_fastqs_and_genome_size_and_base_count)
-        MERGE_READS.out.view()
         min_read_length_and_fastqs = DETERMINE_MIN_READ_LENGTH.out.join(MERGE_READS.out)
     }
 
