@@ -213,10 +213,10 @@ process FASTQC_MULTIQC {
     saveAs: { "fastqc_multiqc_report.html" }
 
   input:
-  file(fastqc_directories) 
+  path(fastqc_directories) 
 
   output:
-  file("multiqc_report.html")
+  path("multiqc_report.html")
 
   script:
   """
@@ -329,7 +329,7 @@ process DOWNSAMPLE_READS{
   if (params.depth_cutoff  && base_count/genome_size > params.depth_cutoff.toInteger()){
     downsampling_factor = params.depth_cutoff.toInteger()/(base_count/genome_size)
   } else {
-    downsampling_factor= null
+    downsampling_factor = ""
   }
   """
   DOWNSAMPLING_FACTOR=${downsampling_factor}
@@ -440,7 +440,7 @@ process QUAST {
 
   output:
   path("${sample_id}"), emit: quast_dir
-  path("${sample_id}/report.tsv"), emit: quast_report 
+  tuple(val(sample_id), path("${sample_id}/report.tsv"), emit: quast_report)
 
   """
   quast.py ${contig_file} -o .
@@ -493,3 +493,142 @@ process QUAST_MULTIQC {
   multiqc --interactive .
   """
 }
+
+
+process QUALIFYR {
+  tag { sample_id }
+
+  publishDir "${params.output_dir}/assemblies/pass",
+    mode: 'copy',
+    pattern: 'assemblies/pass/*',
+    saveAs: { file -> file.split('\\/')[-1] }
+
+  publishDir "${params.output_dir}/assemblies/warning",
+    mode: 'copy',
+    pattern: 'assemblies/warning/*',
+    saveAs: { file -> file.split('\\/')[-1] }
+  
+  publishDir "${params.output_dir}/assemblies/failure",
+    mode: 'copy',
+    pattern: 'assemblies/failure/*',
+    saveAs: { file -> file.split('\\/')[-1] }
+
+  input:
+  path(qc_conditions_yml)
+  tuple(val(sample_id), path(fastqc_reports), path(confindr_report), path(quast_report), path(scaffold_file), path(bactinspector_report), path(file_size_check_output))
+
+  output:
+  path('assemblies/**/*')
+  path("${sample_id}.qualifyr.json"), emit: json_files
+
+
+  """
+  # extract min and max genome sizes from bactinspector output, min file size from
+  # file_size_check output and replace place holder in conditions file
+  MAX_GENOME_LENGTH=\$(cat ${bactinspector_report} | awk -F'\t' 'NR == 2 {print \$8}')
+  # if no species match set to 0
+  if [ -z \$MAX_GENOME_LENGTH ]; then MAX_GENOME_LENGTH=0; fi
+  # add wobble
+  MAX_GENOME_LENGTH=\$(echo \$MAX_GENOME_LENGTH  | awk '{printf("%d",  \$1 * 1.1)}')
+
+  MIN_GENOME_LENGTH=\$(cat ${bactinspector_report} | awk -F'\t' 'NR == 2 {print \$9}')
+  # if no species match set to 0
+  if [ -z \$MIN_GENOME_LENGTH ]; then MIN_GENOME_LENGTH=0; fi
+  # add wobble
+  MIN_GENOME_LENGTH=\$(echo \$MIN_GENOME_LENGTH  | awk '{printf("%d",  \$1 * 0.9)}')    
+
+  MIN_FILE_SIZE=\$(cat ${file_size_check_output} | awk -F'\t' 'NR == 2 {print \$2}')
+
+  sed -i "s/MAX_GENOME_LENGTH/\${MAX_GENOME_LENGTH}/" ${qc_conditions_yml} 
+  sed -i "s/MIN_GENOME_LENGTH/\${MIN_GENOME_LENGTH}/" ${qc_conditions_yml}
+  sed -i "s/MIN_FILE_SIZE/\${MIN_FILE_SIZE}/" ${qc_conditions_yml}
+
+
+  result=`qualifyr check -y ${qc_conditions_yml} -f ${fastqc_reports} -c ${confindr_report}  -q ${quast_report} -b ${bactinspector_report} -z ${file_size_check_output} -s ${sample_id} 2> ERR`
+  return_code=\$?
+  if [[ \$return_code -ne 0 ]]; then
+    exit 1;
+  else
+    if [[ \$result == "PASS" ]]; then
+      qc_level="pass"
+    elif [[ \$result == "WARNING" ]]; then
+      qc_level="warning"
+    elif [[ \$result == "FAILURE" ]]; then
+      qc_level="failure"
+    fi
+    mkdir -p assemblies/\${qc_level}
+    mv ${scaffold_file} assemblies/\${qc_level}/
+
+    if [[ \$result != "PASS" ]]; then
+      mv ERR assemblies/\${qc_level}/${sample_id}_qc_result.tsv
+    fi
+  fi
+
+
+  # make json file
+  qualifyr check -y ${qc_conditions_yml} -f ${fastqc_reports} -c ${confindr_report}  -q ${quast_report} -b ${bactinspector_report} -z ${file_size_check_output} -s ${sample_id} -j -o .
+  """
+}
+
+
+process QUALIFYR_FAILED_SAMPLE {
+  tag { sample_id }
+  input:
+  tuple(val(sample_id), val(file_size))
+  tuple(path(failed_sample_conditions_template), path(bactinspector_template), path(confindr_template), path(fastqc_template), path(file_size_check_template), path(quast_template))
+
+  output:
+  path("${sample_id}.qualifyr.json")
+
+  script:
+
+  """
+  sed -i "s/FILE_SIZE/${file_size}/" ${file_size_check_template}
+  sed -i "s/MIN_FILE_SIZE/${params.prescreen_file_size_check}/" ${failed_sample_conditions_template}
+
+  # make json file
+  qualifyr check -y ${failed_sample_conditions_template} -f ${fastqc_template} ${fastqc_template} -c ${confindr_template}  -q ${quast_template} -b ${bactinspector_template} -z ${file_size_check_template} -s ${sample_id} -j -o .
+  """
+}
+
+process QUALIFYR_REPORT {
+  tag { 'qualifyr report' }
+
+  publishDir "${params.output_dir}/quality_reports",
+    mode: 'copy',
+    pattern: "qualifyr_report.*"
+
+  input:
+  path(json_files)
+  val(version)
+
+  output:
+  path("qualifyr_report.*")
+
+  script:
+  workflow_command = workflow.commandLine.replaceAll('"', '\\\\"')
+  """
+  qualifyr report -i . -c 'quast.N50,quast.# contigs (>= 1000 bp),quast.Total length (>= 1000 bp),confindr.contam_status,bactinspector.species' -s "Analysis with GHRU Assembly Pipeline version ${version}<br><br>Command line:<br>${workflow_command}"
+  """
+
+}
+
+  process WRITE_ASSEMBLY_TO_DIR {
+    tag { "assemblies to output" }
+
+    publishDir "${params.output_dir}",
+      mode: "copy"
+
+    input:
+    path(scaffold_files)
+
+    output:
+    path("assemblies")
+
+    script:
+    """
+    mkdir assemblies
+    mv ${scaffold_files} assemblies/
+    """
+
+  }

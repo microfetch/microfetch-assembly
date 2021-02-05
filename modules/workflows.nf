@@ -35,4 +35,6 @@ workflow PRE_SCREEN_FASTQ_FILESIZE_WORKFLOW {
             .map { items -> [items[0], items[1]] }
     emit:
         included_sample_id_and_reads
+        excluded_genomes_based_on_file_size
+        WRITE_OUT_FILESIZE_CHECK.out
 }

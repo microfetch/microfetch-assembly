@@ -49,6 +49,11 @@ def check_params(Map params) {
         final_params.depth_cutoff = false
     }
 
+        // make path absolute
+    if (final_params.qc_conditions && !final_params.qc_conditions.startsWith("/")){
+        final_params.qc_conditions = "${baseDir}/${final_params.qc_conditions}"
+    }
+
     // // set careful 
     // if (params.careful) {
     // careful = true

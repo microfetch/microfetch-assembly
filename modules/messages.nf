@@ -49,7 +49,7 @@ def complete_message(Map params, nextflow.script.WorkflowMetadata workflow, Stri
     println ""
     println "Parameters"
     println "=========="
-    params.each{ k, v ->
+    params.sort{ it.key }.each{ k, v ->
         if (v){
             println "${k}: ${v}"
         }
