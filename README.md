@@ -1,15 +1,16 @@
 # GHRU SPAdes Assembly workflow
 This [Nextflow](https://www.nextflow.io/) workflow can be used to process short read fastq files an assembly pipeline using the [SPAdes assembler](http://cab.spbu.ru/software/spades/). Alongside this it will QC the reads before and after trimming and QC the final assembled scaffolds file using [Quast](http://quast.sourceforge.net/quast).
 The pipeline was based on Shovill (Thanks to Torsten Seemann @torstenseemann): https://github.com/tseemann/shovill
+
 ### Authors
-Anthony Underwood @bioinformant <au3@sanger.ac.uk>
-Varun Shammana
-Ayorinde Afolayan
-Erkison Odih
-Angela Sofia Garcia
-Felipe Delgadillo Barrera
-Oscar Gabriel Beltran
-Johan Fabian Bernal
+Anthony Underwood @bioinformant <au3@sanger.ac.uk>  
+Varun Shammana  
+Ayorinde Afolayan  
+Erkison Odih  
+Angela Sofia Garcia  
+Felipe Delgadillo Barrera  
+Oscar Gabriel Beltran  
+Johan Fabian Bernal  
 
 ## Instructions
 The dependencies are provided in a Docker image
