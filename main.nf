@@ -92,10 +92,10 @@ workflow {
 
     // Merge reads
     if (final_params.single_read) {
-        min_read_length_and_fastqs = DETERMINE_MIN_READ_LENGTH.out.join(corrected_reads)
+        min_read_length_and_fastqs = corrected_reads.join(DETERMINE_MIN_READ_LENGTH.out)
     } else {
         MERGE_READS(corrected_reads)
-        min_read_length_and_fastqs = DETERMINE_MIN_READ_LENGTH.out.join(MERGE_READS.out)
+        min_read_length_and_fastqs = MERGE_READS.out.join(DETERMINE_MIN_READ_LENGTH.out)
     }
     // assemble reads
     SPADES_ASSEMBLY(min_read_length_and_fastqs)
@@ -109,7 +109,7 @@ workflow {
     QUAST_MULTIQC(QUAST.out.quast_dir.collect())
 
     // summarise quality
-    quality_files = QC_POST_TRIMMING.out.qc_post_trimming_files.join(CHECK_FOR_CONTAMINATION.out).join(QUAST.out.quast_report).join(FILTER_SCAFFOLDS.out.scaffolds_for_single_analysis).join(SPECIES_IDENTIFICATION.out).join(file_size_checks)
+    quality_files = QUAST.out.quast_report.join(CHECK_FOR_CONTAMINATION.out).join(QC_POST_TRIMMING.out.qc_post_trimming_files).join(FILTER_SCAFFOLDS.out.scaffolds_for_single_analysis).join(SPECIES_IDENTIFICATION.out).join(file_size_checks)
     if (final_params.qc_conditions){
         QUALIFYR(final_params.qc_conditions, quality_files)
         QUALIFYR_FAILED_SAMPLE(excluded_genomes_based_on_file_size, get_templates())

@@ -374,7 +374,7 @@ process SPADES_ASSEMBLY {
   tag { sample_id }
 
   input:
-  tuple(val(sample_id), val(min_read_length), path(reads)) // from min_read_length_and_raw_fastqs
+  tuple(val(sample_id), path(reads), val(min_read_length)) // from min_read_length_and_raw_fastqs
   
   output:
   tuple(val(sample_id), path("scaffolds.fasta")) // into scaffolds
@@ -515,7 +515,7 @@ process QUALIFYR {
 
   input:
   path(qc_conditions_yml)
-  tuple(val(sample_id), path(fastqc_reports), path(confindr_report), path(quast_report), path(scaffold_file), path(bactinspector_report), path(file_size_check_output))
+  tuple(val(sample_id), path(quast_report), path(confindr_report), path(fastqc_reports), path(scaffold_file), path(bactinspector_report), path(file_size_check_output))
 
   output:
   path('assemblies/**/*')
@@ -575,7 +575,7 @@ process QUALIFYR_FAILED_SAMPLE {
   tag { sample_id }
   input:
   tuple(val(sample_id), val(file_size))
-  tuple(path(failed_sample_conditions_template), path(bactinspector_template), path(confindr_template), path(fastqc_template), path(file_size_check_template), path(quast_template))
+  tuple(path(quast_template), path(failed_sample_conditions_template), path(bactinspector_template), path(confindr_template), path(fastqc_template), path(file_size_check_template))
 
   output:
   path("${sample_id}.qualifyr.json")

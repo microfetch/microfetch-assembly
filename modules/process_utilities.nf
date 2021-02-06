@@ -17,5 +17,5 @@ def get_templates(){
   fastqc_template = "${baseDir}/templates/failed_sample_qualifyr_files/fastqc.txt"
   file_size_check_template = "${baseDir}/templates/failed_sample_qualifyr_files/file_size_check.tsv"
   quast_template = "${baseDir}/templates/failed_sample_qualifyr_files/quast.txt"
-  return([failed_sample_conditions_template, bactinspector_template, confindr_template, fastqc_template, file_size_check_template, quast_template])
+  return([quast_template, failed_sample_conditions_template, bactinspector_template, confindr_template, fastqc_template, file_size_check_template])
 }
