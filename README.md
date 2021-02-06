@@ -103,7 +103,7 @@ These will be found in the directory specified by the `--output_dir` argument
   - [SPAdes](http://cab.spbu.ru/software/spades/) A genome assembly algorithm designed for single cell and multi-cells bacterial data sets.
   - [contig-tools](https://pypi.org/project/contig-tools/) A utility Python package to parse multi fasta files resulting from de novo assembly.
   - [Quast](http://quast.sourceforge.net/quast) A tool to evaluate the aulaity of genome assemblies.
-  - [ConFindr](https://lowandrew.github.io/ConFindr/) Software that can detect contamination in bacterial NGS data, both between and within species.
+  - [ConFindr](https://github.com/OLC-Bioinformatics/ConFindr) Software that can detect contamination in bacterial NGS data, both between and within species.
   - [QualiFyr](https://gitlab.com/cgps/qualifyr) Software to give an overall QC status for a sample based on multiple QC metric files
   - [MultiQC](https://multiqc.info/) Aggregate results from bioinformatics analyses across many samples into a single report
   - [KAT](https://github.com/TGAC/KAT) The K-mer Analysis Toolkit (KAT) contains a number of tools that analyse and compare K-mer spectra
