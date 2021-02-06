@@ -82,7 +82,7 @@ These will be found in the directory specified by the `--output_dir` argument
       - FastQC: fastqc_multiqc_report.html
       - Quast: quast_multiqc_report.html
     - QualiFyr reports. If a qc_conditions.yml file was supplied reports will be generated that contain a summary of the overall pass/fail status of each sample.
-      - qualifyr_report.html : e.g [QualiFyr Report](https://glcdn.githack.com/cgps/ghru/pipelines/dsl2/pipelines/assembly/-/raw/develop/README_files/qualifyr_report.html)
+      - qualifyr_report.html : e.g [QualiFyr Report](https://glcdn.githack.com/cgps/ghru/pipelines/dsl2/pipelines/assembly/-/raw/develop/README_files/example_qualifyr_report.html)
       - qualifyr_report.tsv
   - if the `--full_output` parameter is given then the following will also be available in the output directory
     - A directory called `fastqc/pre_trimming` that contans the Fastqc reports for each fastq in html format prior to trimming
