@@ -5,7 +5,7 @@ The pipeline was based on Shovill (Thanks to Torsten Seemann @torstenseemann): h
 ### Authors
 Anthony Underwood @bioinformant <au3@sanger.ac.uk>  
 Varun Shammana  @varunshamanna <varunshamanna4@gmail.com>
-Ayorinde Afolayan  
+Ayorinde Afolayan  @Ayorinde_Afo <afolayanayorinde@gmail.com>
 Erkison Odih  
 Angela Sofia Garcia  
 Felipe Delgadillo Barrera  
