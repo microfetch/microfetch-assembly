@@ -7,7 +7,7 @@ Anthony Underwood @bioinformant <au3@sanger.ac.uk>
 Varun Shammana  @varunshamanna <varunshamanna4@gmail.com>
 Ayorinde Afolayan  @Ayorinde_Afo <afolayanayorinde@gmail.com>
 Erkison Odih  
-Angela Sofia Garcia  
+Angela Sofia Garcia  <as.garciav@uniandes.edu.co>
 Felipe Delgadillo Barrera  
 Oscar Gabriel Beltran  
 Johan Fabian Bernal  
