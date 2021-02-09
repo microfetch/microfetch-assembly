@@ -126,5 +126,5 @@ workflow.onComplete {
 }
 
 workflow.onError {
-    error_message($workflow)
+    error_message(workflow)
 }
