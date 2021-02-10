@@ -4,13 +4,13 @@ The pipeline was based on Shovill (Thanks to Torsten Seemann @torstenseemann): h
 
 ### Authors
 Anthony Underwood @bioinformant <au3@sanger.ac.uk>  
-Varun Shammana  @varunshamanna <varunshamanna4@gmail.com>
-Ayorinde Afolayan  @Ayorinde_Afo <afolayanayorinde@gmail.com>
+Varun Shammana  @varunshamanna <varunshamanna4@gmail.com>  
+Ayorinde Afolayan  @Ayorinde_Afo <afolayanayorinde@gmail.com>  
 Erkison Odih  
-Angela Sofia Garcia  <as.garciav@uniandes.edu.co>
+Angela Sofia Garcia  <as.garciav@uniandes.edu.co>  
 Felipe Delgadillo Barrera  
 Oscar Gabriel Beltran  
-Johan Fabian Bernal  
+[Johan Fabian Bernal](https://gitlab.com/johan.bernal.morales) <johan.bernal.morales@gmail.com>
 
 ## Instructions
 The dependencies are provided in a Docker image
