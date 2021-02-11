@@ -1,4 +1,4 @@
-image: docker:19.03.0-dind
+image: ghcr.io/ubuntu-latest
 variables:
   DEBIAN_FRONTEND: noninteractive
   NXF_ANSI_LOG: 'false'
@@ -9,7 +9,6 @@ stages:
 testing:
   stage: test
   script:
-    - apt update && apt install -qq -y wget openjdk-11-jdk bash && apt-get clean
     - |
       wget -qO- get.nextflow.io | bash
       mv nextflow /usr/local/bin/
