@@ -6,7 +6,7 @@ The pipeline was based on Shovill (Thanks to Torsten Seemann @torstenseemann): h
 Anthony Underwood @bioinformant <au3@sanger.ac.uk>  
 Varun Shammana  @varunshamanna <varunshamanna4@gmail.com>  
 Ayorinde Afolayan  @Ayorinde_Afo <afolayanayorinde@gmail.com>  
-Erkison Odih  
+Erkison Odih @bioinfo_erkison <erkisonodih@gmail.com>
 Angela Sofia Garcia  <as.garciav@uniandes.edu.co>  
 Felipe Delgadillo Barrera  
 Oscar Gabriel Beltran  
@@ -53,7 +53,7 @@ Optional arguments include
 The workflow consists of the following steps
 
 1. QC reads using FastQC before trimming
-2. Trim reads using trimmomatic (dynamic MIN_LEN based on 30% of the read length)
+2. Trim reads using trimmomatic (dynamic MIN_LEN based on 30% of the read length) and Cutadapt (if `--cutadapt` specified)
 3. QC reads using FastQC after trimming
 4. Correct reads using lighter
 5. Check for contamination using [confindr](https://lowandrew.github.io/ConFindr/)
@@ -96,6 +96,7 @@ These will be found in the directory specified by the `--output_dir` argument
 ## Software used within the workflow
   - [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/) A quality control tool for high throughput sequence data.
   - [Trimmomatic](http://www.usadellab.org/cms/?page=trimmomatic) A flexible read trimming tool for Illumina NGS data.
+  - [Cutadapt](https://github.com/marcelm/cutadapt/) Finds and removes adapter sequences, primers, poly-A tails and other types of unwanted sequence from high-throughput sequencing reads
   - [mash](https://mash.readthedocs.io/en/latest/) Fast genome and metagenome distance estimation using MinHash.
   - [lighter](https://github.com/mourisl/Lighter) Fast and memory-efficient sequencing error corrector.
   - [seqtk](https://github.com/lh3/seqtk) A fast and lightweight tool for processing sequences in the FASTA or FASTQ format.
