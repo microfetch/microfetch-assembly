@@ -14,12 +14,11 @@ testing:
       apt install -y wget openjdk-11-jdk apt-transport-https ca-certificates curl software-properties-common &&
       apt-get clean
     - add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable"
-    - apt update && apt-cache policy docker-ce && apt install docker-ce
     - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
+    - apt update && apt-cache policy docker-ce && apt install docker-ce
     - |
       wget -qO- get.nextflow.io | bash
       mv nextflow /usr/local/bin/
-    - 
     - >
       nextflow run main.nf
       --input_dir small_test_input
