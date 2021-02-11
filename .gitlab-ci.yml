@@ -1,4 +1,4 @@
-image: ubuntu:20.04
+image: docker:19.03.0-dind
 variables:
   DEBIAN_FRONTEND: noninteractive
   NXF_ANSI_LOG: 'false'
@@ -9,11 +9,7 @@ stages:
 testing:
   stage: test
   script:
-    - apt update && apt install -qq -y wget openjdk-11-jdk apt-transport-https ca-certificates curl software-properties-common && apt-get clean
-    - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
-    - add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable"
-    - apt update && apt-cache policy docker-ce && apt install -qq -y docker-ce
-    - service docker start
+    - apt update && apt install -qq -y wget openjdk-11-jdk && apt-get clean
     - |
       wget -qO- get.nextflow.io | bash
       mv nextflow /usr/local/bin/
