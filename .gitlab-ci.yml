@@ -12,5 +12,5 @@ testing:
     - docker --version
     -  |
       wget -qO- get.nextflow.io | bash
-      sudo mv nextflow /usr/local/bin/
-    - nextflow help
+      mv nextflow /usr/local/bin/
+    - nextflow -version
