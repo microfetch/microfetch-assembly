@@ -1,4 +1,6 @@
 image: ubuntu:20.04
+variables:
+  DEBIAN_FRONTEND: noninteractive
 
 stages:
   - test
