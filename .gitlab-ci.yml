@@ -1,4 +1,4 @@
-image: ghcr.io/ubuntu-latest
+image: ghcr.io/ubuntu:20.04
 variables:
   DEBIAN_FRONTEND: noninteractive
   NXF_ANSI_LOG: 'false'
