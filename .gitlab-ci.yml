@@ -19,7 +19,6 @@ testing:
     - |
       wget -qO- get.nextflow.io | bash
       mv nextflow /usr/local/bin/
-    - 
     - >
       nextflow run main.nf
       --input_dir small_test_input
