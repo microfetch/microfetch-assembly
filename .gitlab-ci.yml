@@ -10,7 +10,7 @@ testing:
   stage: test
   script:
     - apt update && apt install -y wget openjdk-11-jdk docker.io && apt-get clean
-    - docker --version
+    - docker pull registry.gitlab.com/cgps/ghru/pipelines/dsl2/pipelines/assembly:2.0.0
     -  |
       wget -qO- get.nextflow.io | bash
       mv nextflow /usr/local/bin/
