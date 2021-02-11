@@ -9,11 +9,18 @@ stages:
 testing:
   stage: test
   script:
-    - apt update && apt install -y wget openjdk-11-jdk docker.io && apt-get clean
-    - docker pull registry.gitlab.com/cgps/ghru/pipelines/dsl2/pipelines/assembly:2.0.0
-    -  |
+    - |
+      apt update &&
+      apt install -y wget openjdk-11-jdk apt-transport-https ca-certificates curl software-properties-common &&
+      apt-get clean
+    - add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable"
+    - apt update && apt-cache policy docker-ce && apt install docker-ce
+    - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
+
+    - |
       wget -qO- get.nextflow.io | bash
       mv nextflow /usr/local/bin/
+    - 
     - >
       nextflow run main.nf
       --input_dir small_test_input
