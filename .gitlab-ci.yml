@@ -1,4 +1,4 @@
-image: ghcr.io/ubuntu:20.04
+image: ubuntu:20.04
 variables:
   DEBIAN_FRONTEND: noninteractive
   NXF_ANSI_LOG: 'false'
@@ -9,11 +9,17 @@ stages:
 testing:
   stage: test
   script:
+    - apt update && apt install -y wget openjdk-11-jdk apt-transport-https ca-certificates curl software-properties-common && apt-get clean
+    - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
+    - add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable"
+    - apt update && apt-cache policy docker-ce && apt install -y docker-ce
+    - service docker start
+    - useradd nf_user && groupadd docker && usermod -aG docker nf_user
     - |
       wget -qO- get.nextflow.io | bash
       mv nextflow /usr/local/bin/
     - >
-      nextflow run main.nf
+      su - nf_user && nextflow run main.nf
       --input_dir small_test_input
       --output_dir test_output
       --fastq_pattern "*{R,_}{1,2}.fastq.gz"
