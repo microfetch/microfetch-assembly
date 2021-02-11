@@ -1,4 +1,5 @@
 nextflow.enable.dsl=2
+// include non-process modules
 include {help_message; version_message; complete_message; error_message; pipeline_start_message} from './modules/messages'
 include {default_params; check_params } from './modules/params_parser'
 include {help_or_version} from './modules/params_utilities'
@@ -6,7 +7,6 @@ include {find_genome_size; find_total_number_of_bases; get_templates} from './mo
 
 version = '2.0.0'
 
-//  print help or version if required
 // setup default params
 default_params = default_params()
 // merge defaults with user params
@@ -17,27 +17,28 @@ final_params = check_params(merged_params)
 // starting pipeline
 pipeline_start_message(version, final_params)
 
+// include processes for pipelines
 include {GENOME_SIZE_ESTIMATION; PRE_SCREEN_FASTQ_FILESIZE; WRITE_OUT_FILESIZE_CHECK; DETERMINE_MIN_READ_LENGTH; QC_PRE_TRIMMING; TRIMMING; CUTADAPT; QC_POST_TRIMMING; FASTQC_MULTIQC; SPECIES_IDENTIFICATION; READ_CORRECTION; CHECK_FOR_CONTAMINATION; COUNT_NUMBER_OF_BASES; DOWNSAMPLE_READS; MERGE_READS; SPADES_ASSEMBLY; FILTER_SCAFFOLDS; QUAST; QUAST_SUMMARY;  QUAST_MULTIQC; QUALIFYR; QUALIFYR_FAILED_SAMPLE; QUALIFYR_REPORT; WRITE_ASSEMBLY_TO_DIR} from './modules/processes' addParams(final_params)
 include {PRESCREEN_GENOME_SIZE_WORKFLOW; PRE_SCREEN_FASTQ_FILESIZE_WORKFLOW} from './modules/workflows' addParams(final_params)
 
 workflow {
+    // set up input data
     if (final_params.single_read){
         sample_id_and_reads = Channel
         .fromPath("${final_params.input_dir}/${final_params.fastq_pattern}")
         .map{ file -> tuple (file.baseName.replaceAll(/\..+$/,''), file)}
         .ifEmpty { error "Cannot find any reads matching: ${final_params.input_dir}/${final_params.fastq_pattern}" }
-
     } else {
         sample_id_and_reads = Channel
         .fromFilePairs("${final_params.input_dir}/${final_params.fastq_pattern}")
         .ifEmpty { error "Cannot find any reads matching: ${final_params.input_dir}/${final_params.fastq_pattern}" }
     }
-
+    // Estimate genome sizes for pre screening (if specified) and for read correction
     GENOME_SIZE_ESTIMATION(sample_id_and_reads)
     genome_sizes = GENOME_SIZE_ESTIMATION.out.map { sample_id, path -> find_genome_size(sample_id, path.text) }
     // pre-screen check based on genome size
     if (final_params.prescreen_genome_size_check) {
-        sample_id_and_reads = PRESCREEN_GENOME_SIZE_WORKFLOW(genome_sizes, sample_id_and_reads)
+        sample_id_and_reads = PRESCREEN_GENOME_SIZE_WORKFLOW(sample_id_and_reads)
     }
     // pre screen check based on file size
     if (final_params.prescreen_file_size_check){
@@ -48,9 +49,10 @@ workflow {
     }
     // Assess read length and make MIN LEN for trimmomatic 1/3 of this value
     DETERMINE_MIN_READ_LENGTH(sample_id_and_reads)
+    // QC pre-trimming
     QC_PRE_TRIMMING(sample_id_and_reads)
     
-    // CUTADAPT and QC_Post_Cutadapt
+    // Read Trimmimg
     if (final_params.cutadapt){
         CUTADAPT(sample_id_and_reads, final_params.adapter_file)
         min_trim_length_and_reads = DETERMINE_MIN_READ_LENGTH.out.join(CUTADAPT.out)
@@ -61,16 +63,15 @@ workflow {
         // Trimmming step
         TRIMMING(min_trim_length_and_reads, final_params.adapter_file)
     }
-    //QC_post_Trimming
+    //QC post-trimming
     QC_POST_TRIMMING(TRIMMING.out)
     // Multi QC
     FASTQC_MULTIQC(QC_POST_TRIMMING.out.fastqc_directories.collect())
     // Species ID
     SPECIES_IDENTIFICATION(TRIMMING.out)
     
-    genome_size_trimmed_fastq = TRIMMING.out.join(genome_sizes)
-
     //Read Correction Step
+    genome_size_trimmed_fastq = TRIMMING.out.join(genome_sizes)
     READ_CORRECTION(genome_size_trimmed_fastq)
 
     // Check for contamination
@@ -78,7 +79,7 @@ workflow {
 
     corrected_reads = READ_CORRECTION.out
     // Downsample reads
-    if (params.depth_cutoff){
+    if (final_params.depth_cutoff){
         COUNT_NUMBER_OF_BASES(READ_CORRECTION.out)
         if (final_params.single_read) {
             base_counts = COUNT_NUMBER_OF_BASES.out.map { sample_id, file -> find_total_number_of_bases(sample_id, file.text, 1) }
@@ -100,7 +101,7 @@ workflow {
     // assemble reads
     SPADES_ASSEMBLY(min_read_length_and_fastqs)
 
-    // filter out small low coverage contigs 
+    // filter out small and low coverage contigs 
     FILTER_SCAFFOLDS(SPADES_ASSEMBLY.out)    
 
     // run quast to assess quality of assemblies

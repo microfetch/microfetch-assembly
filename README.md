@@ -66,9 +66,13 @@ The workflow consists of the following steps
 12. Sumarise all assembly QCs using Quast
 13. (Optional if [QuailFyr](https://gitlab.com/cgps/qualifyr) qc conditions YAML file is supplied). Filter assemblies into three directories: pass, warning and failure based on QC  metrics
 
-A sumamry of this process is shown below in the diagram that was generated when running Nextflow using the -with-dag command
+A sumamry of this process is shown below
 
-![workflow diagram](README_files/pipeline_dag.png)
+![pipeline diagram](README_files/assembly_pipeline_processes.png)
+
+A full DAG of the proceesed generated when running Nextflow can be seen below
+
+![pipeline dag](README_files/pipeline_dag.png)
 
 ## Workflow outputs
 These will be found in the directory specified by the `--output_dir` argument
@@ -114,10 +118,10 @@ These will be found in the directory specified by the `--output_dir` argument
 
 Test command for paired end reads
 ```
-nextflow run main.nf --input_dir small_test_input --output_dir test_output --fastq_pattern '*{R,_}{1,2}.fastq.gz' --adapter_file adapters.fas  --full_output --cutadapt -resume
+nextflow run main.nf --input_dir small_test_input --output_dir test_output --fastq_pattern '*{R,_}{1,2}.fastq.gz' --adapter_file adapters.fas  --qc_conditions qc_conditions_nextera.yml --full_output --cutadapt -resume
 ```
 
 Test command for single end reads
 ```
-nextflow run main.nf --input_dir small_test_input --output_dir test_output --fastq_pattern '*{R,_}1.fastq.gz' --adapter_file adapters.fas  --full_output  --cutadapt --single_read -resume
+nextflow run main.nf --input_dir small_test_input --output_dir test_output --fastq_pattern '*{R,_}1.fastq.gz' --adapter_file adapters.fas --qc_conditions qc_conditions_nextera.yml --full_output  --cutadapt --single_read -resume
 ```
