@@ -6,6 +6,7 @@ stages:
 testing:
   stage: test
   script:
+    - apt install -y wget && apt-get clean
     -  |
       wget -qO- get.nextflow.io | bash
       sudo mv nextflow /usr/local/bin/
