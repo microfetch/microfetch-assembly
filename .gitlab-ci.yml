@@ -1,0 +1,15 @@
+image: nextflow/nextflow:latest
+
+stages:
+  - test
+
+testing:
+  stage: test
+  script:
+    - nextflow run main.nf \
+    -input_dir small_test_input \
+    --output_dir test_output \
+    --fastq_pattern "*{R,_}{1,2}.fastq.gz" \
+    --adapter_file adapters.fas  \
+    --qc_conditions qc_conditions_nextera.yml \
+    --full_output --cutadapt -resume
