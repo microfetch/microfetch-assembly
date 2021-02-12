@@ -7,9 +7,10 @@ variables:
 testing:
   stage: test
   script:
-    - mkdir -p ${SHARED_PATH}
-    - touch ${SHARED_PATH}/test_file
-    - docker run -v ${SHARED_PATH}:/mnt ubuntu ls /mnt
+    - echo $PWD
+    - ls -la
+    - touch test.txt
+    - docker run -w $PWD -v $PWD:$PWD quay.io/nextflow/bash bash -c 'ls -la'
 
 
 
