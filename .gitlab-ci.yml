@@ -5,7 +5,7 @@ testing:
   stage: test
   script:
     - echo $PWD
-    - docker run --privileged -w $PWD -v /$PWD:/$PWD quay.io/nextflow/bash bash -c 'ls -la '
+    - docker pull quay.io/nextflow/bash
 
 
 
