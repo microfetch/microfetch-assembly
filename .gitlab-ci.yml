@@ -9,7 +9,7 @@ testing:
   stage: test
   script:
     - echo $PWD
-    - touch hello.txt
+    - touch $PWD/hello.txt
     - ls -la
-    - docker run --privileged -w $PWD -v $PWD:$PWD quay.io/nextflow/bash bash -c 'ls -la'
+    - docker run --privileged -w $PWD -v $PWD:$PWD quay.io/nextflow/bash bash -c 'ls -la $PWD'
 
