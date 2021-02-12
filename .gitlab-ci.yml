@@ -13,9 +13,10 @@ testing:
     - add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable"
     - apt update && apt-cache policy docker-ce && apt install -y docker-ce
     - service docker start
-    - useradd -m -s /usr/bin/bash nf_user && usermod -aG docker nf_user
+    - useradd -m -s /usr/bin/bash -g docker nf_user
     - su - nf_user -c "wget -qO- get.nextflow.io | bash"
     - su - nf_user -c "id"
+    - su - nf_user -c "docker images"
     - su - nf_user -c "docker pull alpine:3.7"
     - >
       su - nf_user -c "NXF_ANSI_LOG=false ./nextflow run $PWD/main.nf
