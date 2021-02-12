@@ -12,7 +12,7 @@ testing:
     - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
     - add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable"
     - apt update && apt-cache policy docker-ce && apt install -y docker-ce
-    - useradd -m -s /usr/bin/bash nf_user && usermod -aG docker nf_user && su -s nf_user
+    - useradd -m -s /usr/bin/bash nf_user && usermod -aG docker nf_user && su - nf_user
     - service docker start
     - su - nf_user -c "docker pull registry.gitlab.com/cgps/ghru/pipelines/dsl2/pipelines/assembly:2.0.0"
     - su - nf_user -c "wget -qO- get.nextflow.io | bash"
