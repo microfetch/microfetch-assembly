@@ -5,11 +5,7 @@ testing:
   stage: test
   script:
     - echo $PWD
-    - ls -la
-    - mkdir /data
-    - chmod +r /data
-    - touch /data/test.txt
-    - docker run --privileged -w $PWD -v /data:/data quay.io/nextflow/bash bash -c 'ls -la /data'
+    - docker run --privileged --volumes-from $CONTAINER_ID -w $PWD -v /$PWD:/$PWD quay.io/nextflow/bash bash -c 'ls -la '
 
 
 
