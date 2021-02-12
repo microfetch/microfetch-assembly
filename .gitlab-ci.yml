@@ -14,11 +14,11 @@ testing:
     - apt update && apt-cache policy docker-ce && apt install -y docker-ce
     - service docker start
     - useradd -m -s /usr/bin/bash -g docker nf_user
+    - newgrp docker
     - su - nf_user -c "wget -qO- get.nextflow.io | bash"
-    - su - nf_user -c "docker images"
     - su - nf_user -c "docker pull registry.gitlab.com/cgps/ghru/pipelines/dsl2/pipelines/assembly:2.0.0"
     - >
-      su - nf_user -c "NXF_ANSI_LOG=false ./nextflow run $PWD/main.nf
+      su - nf_user -c "newgrp docker && NXF_ANSI_LOG=false ./nextflow run $PWD/main.nf
       --input_dir $PWD/small_test_input
       --output_dir $PWD/test_output
       --fastq_pattern '*{R,_}{1,2}.fastq.gz'
