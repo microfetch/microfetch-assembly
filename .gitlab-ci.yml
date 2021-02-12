@@ -1,4 +1,4 @@
-image: ubuntu:20.04
+image: ubuntu:18.04
 variables:
   DEBIAN_FRONTEND: noninteractive
 
@@ -24,6 +24,5 @@ testing:
       --qc_conditions $PWD/qc_conditions_nextera.yml
       --full_output
       --cutadapt
-      -w /usr/local/work
       -profile test
 
