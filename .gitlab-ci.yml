@@ -1,0 +1,44 @@
+image: continuumio/miniconda3
+
+
+testing:
+  stage: test
+  script:
+    - apt update && apt install -y  gcc procps jq wget openjdk-11-jdk && apt-get clean
+    - conda env create -f Docker/conda_environments/assembly.yml
+    - conda env create -f Docker/conda_environments/kat.yml && conda clean -a
+    - conda env create -f Docker/conda_environments/confindr.yml && conda clean -a
+    - conda env create -f Docker/conda_environments/quast.yml && conda clean -a
+    - pip install -r Docker/requirements.txt
+    - cp Docker/scripts/filter_contigs.py /usr/local/bin/
+    - cp Docker/confindr_database.tar.gz /confindr_database.tar.gz
+    - tar xfz /confindr_database.tar.gz && rm /confindr_database.tar.gz && chown -R root:root /confindr_database && chmod -R o+w /confindr_database
+    - export PATH=/opt/conda/bin:/opt/conda/condabin:/opt/conda/envs/assembly/bin:/opt/conda/envs/quast/bin:/opt/conda/envs/confindr/bin:/opt/conda/envs/kat/bin:$PATH
+    - |
+      wget -qO- get.nextflow.io | bash
+      mv nextflow /usr/local/bin/
+    - >
+      NXF_ANSI_LOG=false nextflow run main.nf
+      --input_dir small_test_input
+      --output_dir test_output
+      --fastq_pattern "*{R,_}{1,2}.fastq.gz"
+      --adapter_file adapters.fas
+      --qc_conditions qc_conditions_nextera.yml
+      --full_output
+      --cutadapt
+      -profile test
+    - >
+      NXF_ANSI_LOG=false nextflow run main.nf
+      --input_dir small_test_input
+      --output_dir test_output
+      --fastq_pattern "*{R,_}1.fastq.gz"
+      --adapter_file adapters.fas
+      --qc_conditions qc_conditions_nextera.yml
+      --full_output
+      --cutadapt
+      --single_read
+      -profile test
+
+
+
+  
