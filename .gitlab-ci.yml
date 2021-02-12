@@ -7,7 +7,7 @@ testing:
     - echo $PWD
     - ls -la
     - mkdir /data
-    - chown +r /data
+    - chmod +r /data
     - touch /data/test.txt
     - docker run --privileged -w $PWD -v /data:/data quay.io/nextflow/bash bash -c 'ls -la /data'
 
