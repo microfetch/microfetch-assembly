@@ -15,6 +15,7 @@ testing:
     - service docker start
     - docker pull registry.gitlab.com/cgps/ghru/pipelines/dsl2/pipelines/assembly:2.0.0
     - wget -qO- get.nextflow.io | bash
+    - mkdir /root/work
     - >
       NXF_ANSI_LOG=false ./nextflow run $PWD/main.nf
       --input_dir $PWD/small_test_input
