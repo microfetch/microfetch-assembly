@@ -24,5 +24,6 @@ testing:
       --qc_conditions $PWD/qc_conditions_nextera.yml
       --full_output
       --cutadapt
+      -w /root/work
       -profile test
 
