@@ -1,11 +1,10 @@
-image: docker:19.03.12-dind
+image: continuumio/miniconda3
 
 
 testing:
   stage: test
   script:
-    - echo $PWD
-    - docker pull quay.io/nextflow/bash
+    - conda env create -f conda_environments/assembly.yml
 
 
 
