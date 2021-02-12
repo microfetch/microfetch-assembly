@@ -17,7 +17,7 @@ testing:
     - useradd -m -s /usr/bin/bash nf_user && usermod -aG docker nf_user
     - su - nf_user -c "wget -qO- get.nextflow.io | bash"
     - >
-      su - nf_user -c "./nextflow $PWD/run main.nf
+      su - nf_user -c "./nextflow run $PWD/main.nf
       --input_dir $PWD/small_test_input
       --output_dir $PWD/test_output
       --fastq_pattern '*{R,_}{1,2}.fastq.gz'
