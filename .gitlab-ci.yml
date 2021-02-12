@@ -10,6 +10,7 @@ testing:
   script:
     - echo $PWD
     - touch $PWD/hello.txt
-    - ls -la
-    - docker run --privileged -w $PWD -v $PWD:/data quay.io/nextflow/bash bash -c 'ls -la /data'
+    - cp -r $PWD /data
+    - ls -la /data
+    - docker run --privileged -w $PWD -v /data:/data quay.io/nextflow/bash bash -c 'ls -la /data'
 
