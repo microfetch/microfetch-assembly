@@ -10,6 +10,8 @@ testing:
   script:
     - apk update && apk add openjdk11 wget bash
     - docker pull registry.gitlab.com/cgps/ghru/pipelines/dsl2/pipelines/assembly:2.0.0
+    - touch hello.txt
+    - docker run -w $PWD -v $PWD:$PWD quay.io/nextflow/bash bash -c 'ls -la'
     - wget -qO- get.nextflow.io | bash
     - >
       NXF_ANSI_LOG=false ./nextflow run hello
