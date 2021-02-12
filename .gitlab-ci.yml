@@ -11,9 +11,6 @@ testing:
     - apk update && apk add openjdk11 wget bash
     - docker pull registry.gitlab.com/cgps/ghru/pipelines/dsl2/pipelines/assembly:2.0.0
     - wget -qO- get.nextflow.io | bash
-    - mkdir work
-    - echo "hello" > work/test
-    - cat work/test
     - >
       NXF_ANSI_LOG=false ./nextflow run hello
 
