@@ -13,5 +13,6 @@ testing:
     - add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable"
     - apt update && apt-cache policy docker-ce && apt install -y docker-ce
     - service docker start
-    - touch shared/hello.txt
-    - docker run -w $PWD -v $PWD:$PWD quay.io/nextflow/bash bash -c 'ls -la shared'
+    - mkdir /data
+    - cp -r $PWD /data
+    - docker run -w $PWD -v /data:/data quay.io/nextflow/bash bash -c 'ls -la /data'
