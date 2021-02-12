@@ -15,7 +15,8 @@ testing:
     - apt update && apt-cache policy docker-ce && apt install -y docker-ce
     - service docker start
     - useradd -m -s /usr/bin/bash -g docker nf_user
-    - su nf_user -c "id"
+    - su - nf_user -c "id"
+    - su - nf_user -c "docker images"
     - su nf_user -c "wget -qO- get.nextflow.io | bash"
     - >
       su nf_user -c "./nextflow run main.nf
