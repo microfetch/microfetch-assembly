@@ -9,9 +9,8 @@ testing:
   stage: test
   script:
     - echo $PWD
-    - mkdir /builds/$CI_PROJECT_PATH/shared
-    - touch /builds/$CI_PROJECT_PATH/shared/hello.txt
-    - ls -la /builds/$CI_PROJECT_PATH/shared
-    - docker run --privileged -w $PWD -v /builds/$CI_PROJECT_PATH/shared:/data quay.io/nextflow/bash bash -c 'ls -la /data'
+    - nkdir /data
+    - touch /data/hello.txt
+    - docker run --privileged -w $PWD -v /data:/data quay.io/nextflow/bash bash -c 'ls -la /data'
     
 
