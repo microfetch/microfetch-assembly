@@ -18,7 +18,7 @@ testing:
       wget -qO- get.nextflow.io | bash
       mv nextflow /usr/local/bin/
     - >
-      nextflow run main.nf
+      NXF_ANSI_LOG=false nextflow run main.nf
       --input_dir small_test_input
       --output_dir test_output
       --fastq_pattern "*{R,_}{1,2}.fastq.gz"
@@ -26,6 +26,17 @@ testing:
       --qc_conditions qc_conditions_nextera.yml
       --full_output
       --cutadapt
+      -profile test
+    - >
+      NXF_ANSI_LOG=false nextflow run main.nf
+      --input_dir small_test_input
+      --output_dir test_output
+      --fastq_pattern "*{R,_}1.fastq.gz"
+      --adapter_file adapters.fas
+      --qc_conditions qc_conditions_nextera.yml
+      --full_output
+      --cutadapt
+      --single_read
       -profile test
 
 
