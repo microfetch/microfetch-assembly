@@ -15,6 +15,7 @@ testing:
     - apt update && apt-cache policy docker-ce && apt install -y docker-ce
     - service docker start
     - useradd -m -s /usr/bin/bash nf_user && usermod -aG docker nf_user
+    - echo $PWD && chmod o+r -R .
     - |
       su nf_user -c "wget -qO- get.nextflow.io | bash"
     - >
