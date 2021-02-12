@@ -8,7 +8,7 @@ stages:
 testing:
   stage: test
   script:
-    - apk update && apk add openjdk11 wget
+    - apk update && apk add openjdk11 wget bash
     - docker pull registry.gitlab.com/cgps/ghru/pipelines/dsl2/pipelines/assembly:2.0.0
     - wget -qO- get.nextflow.io | bash
     - >
