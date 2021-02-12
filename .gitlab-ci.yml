@@ -8,7 +8,7 @@ stages:
 testing:
   stage: test
   script:
-    - apk update && apk add openjdk11 wget bash
+    - echo $PWD
     - touch hello.txt
     - ls -la
     - docker run --privileged -w $PWD -v $PWD:$PWD quay.io/nextflow/bash bash -c 'ls -la'
