@@ -1,4 +1,4 @@
-image: docker:19.03.12-dind
+image: ubuntu:20.04
 variables:
   DEBIAN_FRONTEND: noninteractive
 
@@ -8,9 +8,10 @@ stages:
 testing:
   stage: test
   script:
-    - echo $PWD
-    - mkdir /data
-    - touch /data/hello.txt
-    - docker run --privileged -w $PWD -v /data:/data quay.io/nextflow/bash bash -c 'ls -la /data'
-    
-
+    - apt update && apt install -y wget openjdk-11-jdk apt-transport-https ca-certificates curl software-properties-common && apt-get clean
+    - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
+    - add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable"
+    - apt update && apt-cache policy docker-ce && apt install -y docker-ce
+    - service docker start
+    - touch hello.txt
+    - docker run -w $PWD -v $PWD:$PWD quay.io/nextflow/bash bash -c 'ls -la'
