@@ -1,18 +1,9 @@
-image: ubuntu:20.04
+image: docker:latest
+services:
+  - docker:dind
 variables:
-  DEBIAN_FRONTEND: noninteractive
-
-stages:
-  - test
-
-testing:
-  stage: test
-  script:
-    - apt update && apt install -y wget openjdk-11-jdk apt-transport-https ca-certificates curl software-properties-common && apt-get clean
-    - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
-    - add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable"
-    - apt update && apt-cache policy docker-ce && apt install -y docker-ce
-    - service docker start
-    - mkdir /data
-    - cp -r $PWD /data
-    - docker run -w $PWD -v /data:/data quay.io/nextflow/bash bash -c 'ls -la /data'
+  SHARED_PATH: /builds/shared/$CI_PROJECT_PATH
+script:
+  - mkdir -p ${SHARED_PATH}
+  - touch ${SHARED_PATH}/test_file
+  - docker run -v ${SHARED_PATH}:/mnt ubuntu ls /mnt
