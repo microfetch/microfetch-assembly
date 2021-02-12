@@ -9,7 +9,6 @@ testing:
   stage: test
   script:
     - apk update && apk add openjdk11 wget
-    - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
     - docker pull registry.gitlab.com/cgps/ghru/pipelines/dsl2/pipelines/assembly:2.0.0
     - wget -qO- get.nextflow.io | bash
     - >
