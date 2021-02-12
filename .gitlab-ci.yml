@@ -1,4 +1,4 @@
-image: ubuntu:18.04
+image: docker:19.03.13
 variables:
   DEBIAN_FRONTEND: noninteractive
 
@@ -8,11 +8,8 @@ stages:
 testing:
   stage: test
   script:
-    - apt update && apt install -y wget openjdk-11-jdk apt-transport-https ca-certificates curl software-properties-common && apt-get clean
+    - apk update && apk add openjdk11 wget
     - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
-    - add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable"
-    - apt update && apt-cache policy docker-ce && apt install -y docker-ce
-    - service docker start
     - docker pull registry.gitlab.com/cgps/ghru/pipelines/dsl2/pipelines/assembly:2.0.0
     - wget -qO- get.nextflow.io | bash
     - >
