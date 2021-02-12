@@ -16,13 +16,5 @@ testing:
     - docker pull registry.gitlab.com/cgps/ghru/pipelines/dsl2/pipelines/assembly:2.0.0
     - wget -qO- get.nextflow.io | bash
     - >
-      NXF_ANSI_LOG=false ./nextflow run $PWD/main.nf
-      --input_dir $PWD/small_test_input
-      --output_dir $PWD/test_output
-      --fastq_pattern '*{R,_}{1,2}.fastq.gz'
-      --adapter_file $PWD/adapters.fas
-      --qc_conditions $PWD/qc_conditions_nextera.yml
-      --full_output
-      --cutadapt
-      -profile test
+      NXF_ANSI_LOG=false ./nextflow run hello
 
