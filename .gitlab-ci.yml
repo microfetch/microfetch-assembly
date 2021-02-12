@@ -11,5 +11,5 @@ testing:
     - apk update && apk add openjdk11 wget bash
     - touch hello.txt
     - ls -la
-    - docker run -w $PWD -v $PWD:$PWD quay.io/nextflow/bash bash -c 'ls -la'
+    - docker run --privileged -w $PWD -v $PWD:$PWD quay.io/nextflow/bash bash -c 'ls -la'
 
