@@ -8,7 +8,7 @@ Varun Shammana  @varunshamanna <varunshamanna4@gmail.com>
 Ayorinde Afolayan  @Ayorinde_Afo <afolayanayorinde@gmail.com>  
 Erkison Odih @bioinfo_erkison <erkisonodih@gmail.com>
 Angela Sofia Garcia  <as.garciav@uniandes.edu.co>  
-Felipe Delgadillo Barrera  
+[Felipe Delgadillo Barrera](https://gitlab.com/felipe_delgadillo_barrera) <f.delgadillo2628@uniandes.edu.co>
 Oscar Gabriel Beltran  
 [Johan Fabian Bernal](https://gitlab.com/johan.bernal.morales) <johan.bernal.morales@gmail.com>
 
