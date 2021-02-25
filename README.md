@@ -25,11 +25,11 @@ nextflow run assembly.nf [options] -resume
 To run the test sets either of the following commands will work
  - Using paired end reads and no down sampling
     ```
-    nextflow run assembly.nf --input_dir test_input --output_dir test_output --fastq_pattern "*{R,_}{1,2}*.fastq.gz" --adapter_file adapters.fas --qc_conditions qc_conditions_nextera_relaxed.yml 
+    nextflow run main.nf --input_dir test_input --output_dir test_output --fastq_pattern "*{R,_}{1,2}*.fastq.gz" --adapter_file adapters.fas --qc_conditions qc_conditions_nextera_relaxed.yml 
     ```
  -  Using single end reads ato a depth cutofff of 50
     ```
-    nextflow run assembly.nf  --input_dir test_input --output_dir test_output --fastq_pattern "*{R,_}*.fastq.gz" --adapter_file adapters.fas --qc_conditions qc_conditions_nextera_relaxed.yml --depth_cutoff 50 --single_end -resume
+    nextflow run main.nf  --input_dir test_input --output_dir test_output --fastq_pattern "*{R,_}*.fastq.gz" --adapter_file adapters.fas --qc_conditions qc_conditions_nextera_relaxed.yml --depth_cutoff 50 --single_end -resume
     ```
 
 The mandatory options that should be supplied are
