@@ -289,16 +289,14 @@ process CHECK_FOR_CONTAMINATION {
   tuple(val(sample_id), path('confindr_report.csv'))
 
   script:
-  if (confindr_db_path.toString == 'default_confindr_database'){
-    confindr_db_path = '/confindr_database'
-  }
+  def db_path = confindr_db_path.toString() == 'default_confindr_database' ? '/confindr_database' : confindr_db_path
   if (file_pair[0] =~ /_R1/){ // files with _R1 and _R2
     """
-    confindr.py -i . -o . -d ${confindr_db_path} -t 2 -bf 0.025 -b 2 --cross_detail -Xmx 1500m
+    confindr.py -i . -o . -d ${db_path} -t 2 -bf 0.025 -b 2 --cross_detail -Xmx 1500m
     """
   } else { // files with _1 and _2
     """
-    confindr.py -i . -o . -d ${confindr_db_path} -t 2 -bf 0.025 -b 2 --cross_detail -Xmx 1500m -fid _1 -rid _2
+    confindr.py -i . -o . -d ${db_path} -t 2 -bf 0.025 -b 2 --cross_detail -Xmx 1500m -fid _1 -rid _2
     """  
   }
 
