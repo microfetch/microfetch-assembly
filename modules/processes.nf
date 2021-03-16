@@ -294,11 +294,11 @@ process CHECK_FOR_CONTAMINATION {
   }
   if (file_pair[0] =~ /_R1/){ // files with _R1 and _R2
     """
-    confindr.py -i . -o . -d /confindr_database -t 2 -bf 0.025 -b 2 --cross_detail -Xmx 1500m
+    confindr.py -i . -o . -d ${confindr_db_path} -t 2 -bf 0.025 -b 2 --cross_detail -Xmx 1500m
     """
   } else { // files with _1 and _2
     """
-    confindr.py -i . -o . -d /confindr_database -t 2 -bf 0.025 -b 2 --cross_detail -Xmx 1500m -fid _1 -rid _2
+    confindr.py -i . -o . -d ${confindr_db_path} -t 2 -bf 0.025 -b 2 --cross_detail -Xmx 1500m -fid _1 -rid _2
     """  
   }
 
