@@ -1,10 +1,9 @@
 image: continuumio/miniconda3
 
-
 testing:
   stage: test
   only:
-  - master
+    - master
   script:
     - apt update && apt install -y  gcc procps jq wget openjdk-11-jdk && apt-get clean
     - conda env create -f Docker/conda_environments/assembly.yml

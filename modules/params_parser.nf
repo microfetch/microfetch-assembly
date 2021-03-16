@@ -53,7 +53,7 @@ def check_params(Map params) {
             final_params.confindr_db_path = "${baseDir}/${final_params.confindr_db_path}"
         }
     } else {
-        final_params.confindr_db_path = "/confindr_database"
+        final_params.confindr_db_path = "/default_confindr_database"
     }
     return final_params
 }
