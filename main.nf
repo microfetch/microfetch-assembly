@@ -75,7 +75,7 @@ workflow {
     READ_CORRECTION(genome_size_trimmed_fastq)
 
     // Check for contamination
-    CHECK_FOR_CONTAMINATION(READ_CORRECTION.out)
+    CHECK_FOR_CONTAMINATION(READ_CORRECTION.out, final_params.confindr_db_path)
 
     corrected_reads = READ_CORRECTION.out
     // Downsample reads

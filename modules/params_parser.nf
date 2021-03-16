@@ -15,6 +15,7 @@ def default_params(){
     params.adapter_file = false
     params.cutadapt = false
     params.depth_cutoff = false
+    params.confindr_db_path = false
     params.careful = false
     params.minimum_scaffold_length = 500
     params.minimum_scaffold_depth = 3
@@ -44,6 +45,15 @@ def check_params(Map params) {
     // make path absolute
     if (final_params.qc_conditions && !final_params.qc_conditions.startsWith("/")){
         final_params.qc_conditions = "${baseDir}/${final_params.qc_conditions}"
+    }
+
+    // make path absolute
+    if (final_params.confindr_db_path) {
+        if (!final_params.confindr_db_path.startsWith("/")){
+            final_params.confindr_db_path = "${baseDir}/${final_params.confindr_db_path}"
+        }
+    } else {
+        final_params.confindr_db_path = "/confindr_database"
     }
     return final_params
 }
