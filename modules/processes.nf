@@ -283,6 +283,7 @@ process CHECK_FOR_CONTAMINATION {
 
   input:
   tuple(val(sample_id), path(file_pair))
+  path(confindr_db_path)
 
   output:
   tuple(val(sample_id), path('confindr_report.csv'))
@@ -290,11 +291,11 @@ process CHECK_FOR_CONTAMINATION {
   script:
   if (file_pair[0] =~ /_R1/){ // files with _R1 and _R2
     """
-    confindr.py -i . -o . -d /confindr_database -t 2 -bf 0.025 -b 2 --cross_detail -Xmx 1500m
+    confindr.py -i . -o . -d ${confindr_db_path} -t 2 -bf 0.025 -b 2 --cross_detail -Xmx 1500m
     """
   } else { // files with _1 and _2
     """
-    confindr.py -i . -o . -d  /confindr_database -t 2 -bf 0.025 -b 2 --cross_detail -Xmx 1500m -fid _1 -rid _2
+    confindr.py -i . -o . -d  ${confindr_db_path} -t 2 -bf 0.025 -b 2 --cross_detail -Xmx 1500m -fid _1 -rid _2
     """  
   }
 
