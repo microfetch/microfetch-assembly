@@ -610,7 +610,7 @@ process QUALIFYR_REPORT {
   script:
   workflow_command = workflow.commandLine.replaceAll('"', '\\\\"')
   """
-  qualifyr report -i . -c 'quast.N50,quast.# contigs (>= 1000 bp),quast.Total length (>= 1000 bp),confindr.contam_status,bactinspector.species' -s "Analysis with GHRU Assembly Pipeline version ${version}<br><br>Command line:<br>${workflow_command}"
+  qualifyr report -i . -c 'quast.N50,quast.# contigs (>= 0 bp),quast.# contigs (>= 1000 bp),quast.Total length (>= 1000 bp),quast.GC (%),confindr.contam_status,bactinspector.species' -s "Analysis with GHRU Assembly Pipeline version ${version}<br><br>Command line:<br>${workflow_command}"
   """
 
 }
