@@ -29,7 +29,7 @@ To run the test sets either of the following commands will work
     ```
  -  Using single end reads ato a depth cutofff of 50
     ```
-    nextflow run assembly.nf  --input_dir test_input --output_dir test_output --fastq_pattern "*{R,_}*.fastq.gz" --adapter_file adapters.fas --qc_conditions qc_conditions_nextera_relaxed.yml --depth_cutoff 50 --single_end -resume
+    nextflow run assembly.nf  --input_dir test_input --output_dir test_output --fastq_pattern "*{R,_}*.fastq.gz" --adapter_file adapters.fas --qc_conditions qc_conditions_nextera_relaxed.yml --depth_cutoff 50 --single_read -resume
     ```
 
 The mandatory options that should be supplied are
