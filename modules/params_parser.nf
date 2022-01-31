@@ -9,7 +9,7 @@ def default_params(){
     params.input_dir = false
     params.fastq_pattern = false
     params.output_dir = false
-    params.single_read = false
+    params.single_end = false
     params.prescreen_genome_size_check = false
     params.prescreen_file_size_check = 5
     params.adapter_file = false

@@ -39,7 +39,7 @@ The mandatory options that should be supplied are
   - The path to a fasta file containing adapter sequences to trim from reads specified by the `--adapter_sequences` argument
 
 Optional arguments include
-  - `--single_read` There is only one read file per sample
+  - `--single_end` There is only one read file per sample
   - `--depth_cutoff` Downsample each sample to an approximate depth of the value supplied e.g 50 means downsample to 50x depth of coverage . If not specified no downsampling will occur
   - `--careful` Turn on the SPAdes careful option which improves assembly by mapping the reads back to the contigs
   - `--minimum_scaffold_length` The minimum length of a scaffold to keep. Others will be filtered out. Default 500 
@@ -124,6 +124,6 @@ nextflow run main.nf --input_dir small_test_input --output_dir test_output --fas
 
 Test command for single end reads
 ```
-nextflow run main.nf --input_dir small_test_input --output_dir test_output --fastq_pattern '*{R,_}1.fastq.gz' --adapter_file adapters.fas --qc_conditions qc_conditions_nextera.yml --full_output  --cutadapt --single_read -resume
+nextflow run main.nf --input_dir small_test_input --output_dir test_output --fastq_pattern '*{R,_}1.fastq.gz' --adapter_file adapters.fas --qc_conditions qc_conditions_nextera.yml --full_output  --cutadapt --single_end -resume
 ```
 

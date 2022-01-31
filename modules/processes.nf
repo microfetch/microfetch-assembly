@@ -91,7 +91,7 @@ process QC_PRE_TRIMMING {
     path('*.html')
 
     script:
-    if (params.single_read){
+    if (params.single_end){
         """
         fastqc -java=/opt/conda/envs/assembly/bin/java ${file_pair[0]}
         """
@@ -115,7 +115,7 @@ process TRIMMING {
   tuple(val(sample_id), path('trimmed_fastqs/*.f*q.gz'))
 
   script:
-  if (params.single_read) {
+  if (params.single_end) {
     method = "SE"
     file_input_and_outputs = "${reads[0]} trimmed_fastqs/${reads[0]}"
   } else {
@@ -145,7 +145,7 @@ process QC_POST_TRIMMING {
   path("*_fastqc_data"), emit: fastqc_directories
 
   script:
-  if (params.single_read) {
+  if (params.single_end) {
     r1_prefix = reads[0].baseName.replaceFirst(/\\.gz$/, '').split('\\.')[0..-2].join('.')
     """
     fastqc -java=/opt/conda/envs/assembly/bin/java ${reads[0]} --extract
@@ -189,7 +189,7 @@ process CUTADAPT {
   tuple(val(sample_id), path('pruned_fastqs/*.f*q.gz') )
   
   script:
-  if (params.single_read) {
+  if (params.single_end) {
     file_input_and_outputs = "-o pruned_fastqs/${reads[0]} ${reads[0]}"
   } else {
     file_input_and_outputs = "-o pruned_fastqs/${reads[0]}  -p pruned_fastqs/${reads[1]} ${reads[0]} ${reads[1]}"
@@ -256,7 +256,7 @@ process READ_CORRECTION {
   tuple(val(sample_id), path("corrected_fastqs/*.f*q.gz") )
   
   script:
-  if (params.single_read) {
+  if (params.single_end) {
     reads_argument = "-r ${reads[0]}"
   } else {
     reads_argument = "-r ${reads[0]} -r ${reads[1]}"
@@ -398,7 +398,7 @@ process SPADES_ASSEMBLY {
     careful = ""
   }
 
-  if (params.single_read) {
+  if (params.single_end) {
     reads_argument = "--s1 ${reads}"
   } else {
     reads_argument = "--pe1-1 ${reads[1]} --pe1-2 ${reads[2]} --pe1-m ${reads[0]}"

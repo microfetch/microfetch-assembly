@@ -37,7 +37,7 @@ testing:
       --qc_conditions qc_conditions_nextera_relaxed.yml
       --full_output
       --cutadapt
-      --single_read
+      --single_end
       -profile test
 
 
