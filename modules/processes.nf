@@ -93,11 +93,11 @@ process QC_PRE_TRIMMING {
     script:
     if (params.single_read){
         """
-        fastqc ${file_pair[0]}
+        fastqc -java=/opt/conda/envs/assembly/bin/java ${file_pair[0]}
         """
     } else {
         """
-        fastqc ${file_pair[0]} ${file_pair[1]}
+        fastqc -java=/opt/conda/envs/assembly/bin/java ${file_pair[0]} ${file_pair[1]}
         """
     }
 }
@@ -148,7 +148,7 @@ process QC_POST_TRIMMING {
   if (params.single_read) {
     r1_prefix = reads[0].baseName.replaceFirst(/\\.gz$/, '').split('\\.')[0..-2].join('.')
     """
-    fastqc ${reads[0]} --extract
+    fastqc -java=/opt/conda/envs/assembly/bin/java ${reads[0]} --extract
     # rename files
     mv ${r1_prefix}_fastqc/summary.txt ${sample_id}_R1_fastqc.txt
 
@@ -160,7 +160,7 @@ process QC_POST_TRIMMING {
   r1_prefix = reads[0].baseName.replaceFirst(/\\.gz$/, '').split('\\.')[0..-2].join('.')
   r2_prefix = reads[1].baseName.replaceFirst(/\\.gz$/, '').split('\\.')[0..-2].join('.')
   """
-  fastqc ${reads[0]} ${reads[1]} --extract
+  fastqc -java=/opt/conda/envs/assembly/bin/java ${reads[0]} ${reads[1]} --extract
   # rename files
   mv ${r1_prefix}_fastqc/summary.txt ${sample_id}_R1_fastqc.txt
   mv ${r2_prefix}_fastqc/summary.txt ${sample_id}_R2_fastqc.txt
