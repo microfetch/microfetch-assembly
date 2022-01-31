@@ -1,4 +1,8 @@
 quast:
+  '# contigs (>= 0 bp)':
+    failure:
+      condition_type: ne
+      condition_value: NA
   '# contigs (>= 1000 bp)':
     failure:
       condition_type: ne
@@ -11,6 +15,15 @@ quast:
     failure:
       condition_type: ne
       condition_value: NA
+  'GC (%)':
+    failure:
+      condition_type: ne
+      condition_value: NA
+  "# N's per 100 kbp":
+    failure:
+      condition_type: ne
+      condition_value: NA
+
 fastqc:
   'Basic Statistics':
     failure:
