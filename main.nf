@@ -23,7 +23,7 @@ include {PRESCREEN_GENOME_SIZE_WORKFLOW; PRE_SCREEN_FASTQ_FILESIZE_WORKFLOW} fro
 
 workflow {
     // set up input data
-    if (final_params.single_read){
+    if (final_params.single_end){
         sample_id_and_reads = Channel
         .fromPath("${final_params.input_dir}/${final_params.fastq_pattern}")
         .map{ file -> tuple (file.baseName.replaceAll(/\..+$/,''), file)}
@@ -81,7 +81,7 @@ workflow {
     // Downsample reads
     if (final_params.depth_cutoff){
         COUNT_NUMBER_OF_BASES(READ_CORRECTION.out)
-        if (final_params.single_read) {
+        if (final_params.single_end) {
             base_counts = COUNT_NUMBER_OF_BASES.out.map { sample_id, file -> find_total_number_of_bases(sample_id, file.text, 1) }
         } else {
             base_counts = COUNT_NUMBER_OF_BASES.out.map { sample_id, file -> find_total_number_of_bases(sample_id, file.text, 2) }
@@ -92,7 +92,7 @@ workflow {
     }
 
     // Merge reads
-    if (final_params.single_read) {
+    if (final_params.single_end) {
         min_read_length_and_fastqs = corrected_reads.join(DETERMINE_MIN_READ_LENGTH.out)
     } else {
         MERGE_READS(corrected_reads)
