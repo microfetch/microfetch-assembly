@@ -19,9 +19,6 @@ RUN conda env create -f /assembly.yml && conda clean -a
 COPY conda_environments/trimmomatic.yml /
 RUN conda env create -f /trimmomatic.yml && conda clean -a
 
-COPY conda_environments/fastqc.yml /
-RUN conda env create -f /fastqc.yml && conda clean -a
-
 COPY requirements.txt /
 RUN pip install -r /requirements.txt
 
