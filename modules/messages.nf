@@ -22,7 +22,7 @@ def help_message() {
         --adapter_file   The path to a fasta file containing adapter sequences to trim from reads
                          (You can use the one supplied using --adapter_file adapaters.fas)
         Optional arguments:
-        --single_read Add if only single rather than paired reads are available
+        --single_end Add if only single rather than paired reads are available
         --prescreen_genome_size_check Size in bp of the maximum estimated genome to assemble. Without this any size genome assembly will be attempted
         --prescreen_file_size_check Minumum size in Mb for the input fastq files. Without this any size of file will be attempted (this and prescreen_genome_size_check are mutually exclusive)
         --cutadapt Whether to use the extra trimminmg step to remove 3' adapater sequences using cutadapt

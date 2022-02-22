@@ -8,11 +8,16 @@ process GENOME_SIZE_ESTIMATION {
     tuple(val(sample_id), path('mash_stats.out'))
 
     script:
-    """
-    kat hist --mer_len 21  --thread 1 --output_prefix ${sample_id} ${reads[0]} > /dev/null 2>&1 \
-    && minima=`cat  ${sample_id}.dist_analysis.json | jq '.global_minima .freq' | tr -d '\\n'`
-    mash sketch -o sketch_${sample_id}  -k 32 -m \$minima -r ${reads[0]}  2> mash_stats.out
-    """
+    if (params.kmer_min_copy)
+      """
+        mash sketch -o sketch_${sample_id}  -k 32 -m ${params.kmer_min_copy} -r ${reads[0]}  2> mash_stats.out
+      """
+    else
+      """
+      kat hist --mer_len 21  --thread 1 --output_prefix ${sample_id} ${reads[0]} > /dev/null 2>&1 \
+      && minima=`cat  ${sample_id}.dist_analysis.json | jq '.global_minima .freq' | tr -d '\\n'`
+      mash sketch -o sketch_${sample_id}  -k 32 -m \$minima -r ${reads[0]}  2> mash_stats.out
+      """
 }
 
 process WRITE_OUT_EXCLUDED_GENOMES {
@@ -91,13 +96,13 @@ process QC_PRE_TRIMMING {
     path('*.html')
 
     script:
-    if (params.single_read){
+    if (params.single_end){
         """
-        fastqc ${file_pair[0]}
+        fastqc -java=/opt/conda/envs/assembly/bin/java ${file_pair[0]}
         """
     } else {
         """
-        fastqc ${file_pair[0]} ${file_pair[1]}
+        fastqc -java=/opt/conda/envs/assembly/bin/java ${file_pair[0]} ${file_pair[1]}
         """
     }
 }
@@ -115,7 +120,7 @@ process TRIMMING {
   tuple(val(sample_id), path('trimmed_fastqs/*.f*q.gz'))
 
   script:
-  if (params.single_read) {
+  if (params.single_end) {
     method = "SE"
     file_input_and_outputs = "${reads[0]} trimmed_fastqs/${reads[0]}"
   } else {
@@ -145,10 +150,10 @@ process QC_POST_TRIMMING {
   path("*_fastqc_data"), emit: fastqc_directories
 
   script:
-  if (params.single_read) {
+  if (params.single_end) {
     r1_prefix = reads[0].baseName.replaceFirst(/\\.gz$/, '').split('\\.')[0..-2].join('.')
     """
-    fastqc ${reads[0]} --extract
+    fastqc -java=/opt/conda/envs/assembly/bin/java ${reads[0]} --extract
     # rename files
     mv ${r1_prefix}_fastqc/summary.txt ${sample_id}_R1_fastqc.txt
 
@@ -160,7 +165,7 @@ process QC_POST_TRIMMING {
   r1_prefix = reads[0].baseName.replaceFirst(/\\.gz$/, '').split('\\.')[0..-2].join('.')
   r2_prefix = reads[1].baseName.replaceFirst(/\\.gz$/, '').split('\\.')[0..-2].join('.')
   """
-  fastqc ${reads[0]} ${reads[1]} --extract
+  fastqc -java=/opt/conda/envs/assembly/bin/java ${reads[0]} ${reads[1]} --extract
   # rename files
   mv ${r1_prefix}_fastqc/summary.txt ${sample_id}_R1_fastqc.txt
   mv ${r2_prefix}_fastqc/summary.txt ${sample_id}_R2_fastqc.txt
@@ -189,7 +194,7 @@ process CUTADAPT {
   tuple(val(sample_id), path('pruned_fastqs/*.f*q.gz') )
   
   script:
-  if (params.single_read) {
+  if (params.single_end) {
     file_input_and_outputs = "-o pruned_fastqs/${reads[0]} ${reads[0]}"
   } else {
     file_input_and_outputs = "-o pruned_fastqs/${reads[0]}  -p pruned_fastqs/${reads[1]} ${reads[0]} ${reads[1]}"
@@ -256,7 +261,7 @@ process READ_CORRECTION {
   tuple(val(sample_id), path("corrected_fastqs/*.f*q.gz") )
   
   script:
-  if (params.single_read) {
+  if (params.single_end) {
     reads_argument = "-r ${reads[0]}"
   } else {
     reads_argument = "-r ${reads[0]} -r ${reads[1]}"
@@ -379,7 +384,7 @@ process SPADES_ASSEMBLY {
   tuple(val(sample_id), path(reads), val(min_read_length)) // from min_read_length_and_raw_fastqs
   
   output:
-  tuple(val(sample_id), path("scaffolds.fasta")) // into scaffolds
+  tuple(env(SPADES_SUCCESS), val(sample_id), path("final_fasta_dir/*.fasta")) // into scaffolds
 
   script:
   spades_memory = 4 * task.attempt
@@ -398,15 +403,35 @@ process SPADES_ASSEMBLY {
     careful = ""
   }
 
-  if (params.single_read) {
+  if (params.single_end) {
     reads_argument = "--s1 ${reads}"
   } else {
     reads_argument = "--pe1-1 ${reads[1]} --pe1-2 ${reads[2]} --pe1-m ${reads[0]}"
   }
 
-  """
-  spades.py ${reads_argument} --only-assembler ${careful} -o . --tmp-dir /tmp/${sample_id}_assembly -k ${kmers} --threads 1 --memory ${spades_memory}
-  """
+  if (task.attempt <=5 ) {
+      """
+      spades.py ${reads_argument} --only-assembler ${careful} -o . --tmp-dir /tmp/${sample_id}_assembly -k ${kmers} --threads 1 --memory ${spades_memory} || >&2 echo "SPAdes failed"
+      mkdir final_fasta_dir
+      if [[ -f "scaffolds.fasta" ]]; then
+        SPADES_SUCCESS=1
+        mv scaffolds.fasta final_fasta_dir/
+      elif [[ -f "contigs.fasta" ]]; then
+        SPADES_SUCCESS=1
+        mv contigs.fasta final_fasta_dir/
+      else
+        SPADES_SUCCESS=0
+        >&2 echo "No contigs found"
+        exit 42
+      fi
+      """
+   } else {
+     """
+     SPADES_SUCCESS=0
+     mkdir final_fasta_dir
+     touch final_fasta_dir/empty.fasta
+     """
+   }
 }
 
 // filter scaffolds to remove small and low coverage contigs
@@ -456,11 +481,14 @@ process QUAST {
 process QUAST_SUMMARY {
   tag { 'quast summary' }
   memory { 4.GB * task.attempt }
-  
+
   publishDir "${params.output_dir}/quast",
     mode: 'copy',
     pattern: "*report.tsv",
     saveAs: { file -> "combined_${file}"}
+  
+  when:
+  ! params.skip_quast_summary
 
   input:
   path(contig_files)
@@ -469,7 +497,7 @@ process QUAST_SUMMARY {
   path("*report.tsv") optional true
 
   """
-  quast.py ${contig_files} -o .
+  quast.py --no-plots --no-html ${contig_files} -o .
   """
 }
 

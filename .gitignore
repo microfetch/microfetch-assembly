@@ -2,6 +2,7 @@ test_*
 .nextflow*
 work
 assembly_output
+small_test_output
 .vscode
 nxf*
 nxf-tmp*

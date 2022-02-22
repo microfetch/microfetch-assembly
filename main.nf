@@ -5,12 +5,13 @@ include {default_params; check_params } from './modules/params_parser'
 include {help_or_version} from './modules/params_utilities'
 include {find_genome_size; find_total_number_of_bases; get_templates} from './modules/process_utilities'
 
-version = '2.0.0'
+version = '2.1.4'
 
 // setup default params
 default_params = default_params()
 // merge defaults with user params
 merged_params = default_params + params
+
 // help and version messages
 help_or_version(merged_params, version)
 final_params = check_params(merged_params)
@@ -23,7 +24,7 @@ include {PRESCREEN_GENOME_SIZE_WORKFLOW; PRE_SCREEN_FASTQ_FILESIZE_WORKFLOW} fro
 
 workflow {
     // set up input data
-    if (final_params.single_read){
+    if (final_params.single_end){
         sample_id_and_reads = Channel
         .fromPath("${final_params.input_dir}/${final_params.fastq_pattern}")
         .map{ file -> tuple (file.baseName.replaceAll(/\..+$/,''), file)}
@@ -81,7 +82,7 @@ workflow {
     // Downsample reads
     if (final_params.depth_cutoff){
         COUNT_NUMBER_OF_BASES(READ_CORRECTION.out)
-        if (final_params.single_read) {
+        if (final_params.single_end) {
             base_counts = COUNT_NUMBER_OF_BASES.out.map { sample_id, file -> find_total_number_of_bases(sample_id, file.text, 1) }
         } else {
             base_counts = COUNT_NUMBER_OF_BASES.out.map { sample_id, file -> find_total_number_of_bases(sample_id, file.text, 2) }
@@ -92,7 +93,7 @@ workflow {
     }
 
     // Merge reads
-    if (final_params.single_read) {
+    if (final_params.single_end) {
         min_read_length_and_fastqs = corrected_reads.join(DETERMINE_MIN_READ_LENGTH.out)
     } else {
         MERGE_READS(corrected_reads)
