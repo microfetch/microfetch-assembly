@@ -1,4 +1,4 @@
-FROM continuumio/miniconda3:4.9.2
+FROM continuumio/miniconda3:4.10.3
 LABEL authors="Anthony Underwood" \
       description="Docker image for de novo assembly"
 
@@ -16,6 +16,9 @@ RUN conda env create -f /quast.yml && conda clean -a
 COPY conda_environments/assembly.yml /
 RUN conda env create -f /assembly.yml && conda clean -a
 
+COPY conda_environments/trimmomatic.yml /
+RUN conda env create -f /trimmomatic.yml && conda clean -a
+
 COPY requirements.txt /
 RUN pip install -r /requirements.txt
 
@@ -24,4 +27,4 @@ RUN tar xfz /confindr_database.tar.gz && rm /confindr_database.tar.gz && chown -
 
 COPY scripts/filter_contigs.py /usr/local/bin/
 
-ENV PATH /opt/conda/bin:/opt/conda/condabin:/opt/conda/envs/assembly/bin:/opt/conda/envs/quast/bin:/opt/conda/envs/confindr/bin:/opt/conda/envs/kat/bin:$PATH
+ENV PATH /opt/conda/bin:/opt/conda/condabin:/opt/conda/envs/trimmomatic/bin:/opt/conda/envs/assembly/bin:/opt/conda/envs/quast/bin:/opt/conda/envs/confindr/bin:/opt/conda/envs/kat/bin:$PATH
