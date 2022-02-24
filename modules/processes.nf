@@ -415,20 +415,20 @@ process SPADES_ASSEMBLY {
       rm -rf /tmp/${sample_id}_assembly
       mkdir final_fasta_dir
       if [[ -f "scaffolds.fasta" ]]; then
-        SPADES_SUCCESS=1
+        SPADES_SUCCESS="TRUE"
         mv scaffolds.fasta final_fasta_dir/
       elif [[ -f "contigs.fasta" ]]; then
-        SPADES_SUCCESS=1
+        SPADES_SUCCESS="TRUE"
         mv contigs.fasta final_fasta_dir/
       else
-        SPADES_SUCCESS=0
+        SPADES_SUCCESS="FALSE"
         >&2 echo "No contigs found"
         exit 42
       fi
       """
    } else {
      """
-     SPADES_SUCCESS=0
+     SPADES_SUCCESS="FALSE"
      mkdir final_fasta_dir
      touch final_fasta_dir/empty.fasta
      """
