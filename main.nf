@@ -19,7 +19,7 @@ final_params = check_params(merged_params)
 pipeline_start_message(version, final_params)
 
 // include processes for pipelines
-include {GENOME_SIZE_ESTIMATION; PRE_SCREEN_FASTQ_FILESIZE; WRITE_OUT_FILESIZE_CHECK; DETERMINE_MIN_READ_LENGTH; QC_PRE_TRIMMING; TRIMMING; CUTADAPT; QC_POST_TRIMMING; FASTQC_MULTIQC; SPECIES_IDENTIFICATION; READ_CORRECTION; CHECK_FOR_CONTAMINATION; COUNT_NUMBER_OF_BASES; DOWNSAMPLE_READS; MERGE_READS; SPADES_ASSEMBLY; FILTER_SCAFFOLDS; QUAST; QUAST_SUMMARY;  QUAST_MULTIQC; QUALIFYR; QUALIFYR_FAILED_SAMPLE; QUALIFYR_REPORT; WRITE_ASSEMBLY_TO_DIR} from './modules/processes' addParams(final_params)
+include {GENOME_SIZE_ESTIMATION; PRE_SCREEN_FASTQ_FILESIZE; WRITE_OUT_FILESIZE_CHECK; DETERMINE_MIN_READ_LENGTH; QC_PRE_TRIMMING; TRIMMING; CUTADAPT; QC_POST_TRIMMING; FASTQC_MULTIQC; SPECIES_IDENTIFICATION; READ_CORRECTION; CHECK_FOR_CONTAMINATION; COUNT_NUMBER_OF_BASES; DOWNSAMPLE_READS; MERGE_READS; SPADES_ASSEMBLY; FILTER_SCAFFOLDS; QUAST; QUAST_SUMMARY;  QUAST_MULTIQC; QUALIFYR; QUALIFYR_FAILED_SAMPLE; QUALIFYR_REPORT; WRITE_ASSEMBLY_TO_DIR; REPORT_IGNORED_ACCESSIONS} from './modules/processes' addParams(final_params)
 include {PRESCREEN_GENOME_SIZE_WORKFLOW; PRE_SCREEN_FASTQ_FILESIZE_WORKFLOW} from './modules/workflows' addParams(final_params)
 
 workflow {
@@ -102,8 +102,33 @@ workflow {
     // assemble reads
     SPADES_ASSEMBLY(min_read_length_and_fastqs)
 
+
+    SPADES_ASSEMBLY.out.view()
+    SPADES_ASSEMBLY.out
+    .branch {
+        success_sample_and_path  ->
+        ACCESSIONS_TO_IGNORE: success_sample_and_path[0] == "FALSE"
+        ACCESSIONS_TO_PROCESS: success_sample_and_path[0] == "TRUE"
+    }
+    .set { success_sample_and_paths_branch }
+    
+    // save ignored genomes in a different list
+    success_sample_and_paths_branch.ACCESSIONS_TO_IGNORE
+        .map { it[1] }
+        .set { ignored_accessions }
+    
+    REPORT_IGNORED_ACCESSIONS(ignored_accessions.collect())
+
     // filter out small and low coverage contigs 
-    FILTER_SCAFFOLDS(SPADES_ASSEMBLY.out)    
+    success_sample_and_paths_branch.ACCESSIONS_TO_PROCESS
+        .map { [it[1], it[2]] }
+        .set { accessions_to_filter }
+
+     success_sample_and_paths_branch.ACCESSIONS_TO_IGNORE.view()
+     success_sample_and_paths_branch.ACCESSIONS_TO_PROCESS.view()
+
+    // filter out small and low coverage contigs 
+    FILTER_SCAFFOLDS(accessions_to_filter)
 
     // run quast to assess quality of assemblies
     QUAST(FILTER_SCAFFOLDS.out.scaffolds_for_single_analysis)
