@@ -671,22 +671,22 @@ process QUALIFYR_REPORT {
 
   }
 
-process REPORT_IGNORED_ACCESSIONS {
-  tag "report ignored accessions"
+process REPORT_IGNORED_IDS {
+  tag "report ignored ids"
   publishDir "${params.output_dir}", mode: 'copy'
 
   input:
-  val ignored_accessions
+  val ignored_ids
 
   output:
-  path("ignored_accesions.txt")
+  path("ignored_ids.txt")
 
   script:
-  ignored_accessions_string = ignored_accessions.join(" ")
+  ignored_ids_string = ignored_ids.join(" ")
   """
-  for IGNORED_ACCESSION in $ignored_accessions_string
+  for IGNORED_ID in $ignored_ids_string
   do
-      echo \$IGNORED_ACCESSION >> ignored_accesions.txt
+      echo \$IGNORED_ID >> ignored_ids.txt
   done
   """
 }
