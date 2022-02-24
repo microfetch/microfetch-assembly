@@ -384,7 +384,7 @@ process SPADES_ASSEMBLY {
   tuple(val(sample_id), path(reads), val(min_read_length)) // from min_read_length_and_raw_fastqs
   
   output:
-  tuple(env(SPADES_SUCCESS), val(sample_id), path("final_fasta_dir/*.fasta")) // into scaffolds
+  tuple env(SPADES_SUCCESS), val(sample_id), path("final_fasta_dir/*.fasta") // into scaffolds
 
   script:
   spades_memory = 4 * task.attempt
