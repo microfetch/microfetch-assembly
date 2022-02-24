@@ -8,11 +8,16 @@ process GENOME_SIZE_ESTIMATION {
     tuple(val(sample_id), path('mash_stats.out'))
 
     script:
-    """
-    kat hist --mer_len 21  --thread 1 --output_prefix ${sample_id} ${reads[0]} > /dev/null 2>&1 \
-    && minima=`cat  ${sample_id}.dist_analysis.json | jq '.global_minima .freq' | tr -d '\\n'`
-    mash sketch -o sketch_${sample_id}  -k 32 -m \$minima -r ${reads[0]}  2> mash_stats.out
-    """
+    if (params.kmer_min_copy)
+      """
+        mash sketch -o sketch_${sample_id}  -k 32 -m ${params.kmer_min_copy} -r ${reads[0]}  2> mash_stats.out
+      """
+    else
+      """
+      kat hist --mer_len 21  --thread 1 --output_prefix ${sample_id} ${reads[0]} > /dev/null 2>&1 \
+      && minima=`cat  ${sample_id}.dist_analysis.json | jq '.global_minima .freq' | tr -d '\\n'`
+      mash sketch -o sketch_${sample_id}  -k 32 -m \$minima -r ${reads[0]}  2> mash_stats.out
+      """
 }
 
 process WRITE_OUT_EXCLUDED_GENOMES {
@@ -379,7 +384,7 @@ process SPADES_ASSEMBLY {
   tuple(val(sample_id), path(reads), val(min_read_length)) // from min_read_length_and_raw_fastqs
   
   output:
-  tuple(val(sample_id), path("scaffolds.fasta")) // into scaffolds
+  tuple env(SPADES_SUCCESS), val(sample_id), path("final_fasta_dir/*.fasta") // into scaffolds
 
   script:
   spades_memory = 4 * task.attempt
@@ -404,9 +409,30 @@ process SPADES_ASSEMBLY {
     reads_argument = "--pe1-1 ${reads[1]} --pe1-2 ${reads[2]} --pe1-m ${reads[0]}"
   }
 
-  """
-  spades.py ${reads_argument} --only-assembler ${careful} -o . --tmp-dir /tmp/${sample_id}_assembly -k ${kmers} --threads 1 --memory ${spades_memory}
-  """
+  if (task.attempt <=5 ) {
+      """
+      spades.py ${reads_argument} --only-assembler ${careful} -o . --tmp-dir /tmp/${sample_id}_assembly -k ${kmers} --threads 1 --memory ${spades_memory} || >&2 echo "SPAdes failed"
+      rm -rf /tmp/${sample_id}_assembly
+      mkdir final_fasta_dir
+      if [[ -f "scaffolds.fasta" ]]; then
+        SPADES_SUCCESS="TRUE"
+        mv scaffolds.fasta final_fasta_dir/
+      elif [[ -f "contigs.fasta" ]]; then
+        SPADES_SUCCESS="TRUE"
+        mv contigs.fasta final_fasta_dir/
+      else
+        SPADES_SUCCESS="FALSE"
+        >&2 echo "No contigs found"
+        exit 42
+      fi
+      """
+   } else {
+     """
+     SPADES_SUCCESS="FALSE"
+     mkdir final_fasta_dir
+     touch final_fasta_dir/empty.fasta
+     """
+   }
 }
 
 // filter scaffolds to remove small and low coverage contigs
@@ -423,7 +449,14 @@ process FILTER_SCAFFOLDS {
   script:
   """
   contig-tools filter -l ${params.minimum_scaffold_length} -c ${params.minimum_scaffold_depth} -f ${scaffold_file}
-  ln -s scaffolds.filter_gt_${params.minimum_scaffold_length}bp_gt_${params.minimum_scaffold_depth}.0cov.fasta ${sample_id}.fasta
+
+  if [[ -f "scaffolds.filter_gt_${params.minimum_scaffold_length}bp_gt_${params.minimum_scaffold_depth}.0cov.fasta" ]]
+  then
+    ln -s scaffolds.filter_gt_${params.minimum_scaffold_length}bp_gt_${params.minimum_scaffold_depth}.0cov.fasta ${sample_id}.fasta
+  elif [[ -f "contigs.filter_gt_${params.minimum_scaffold_length}bp_gt_${params.minimum_scaffold_depth}.0cov.fasta" ]]
+  then
+    ln -s contigs.filter_gt_${params.minimum_scaffold_length}bp_gt_${params.minimum_scaffold_depth}.0cov.fasta ${sample_id}.fasta
+  fi
   """
 
 }
@@ -456,11 +489,14 @@ process QUAST {
 process QUAST_SUMMARY {
   tag { 'quast summary' }
   memory { 4.GB * task.attempt }
-  
+
   publishDir "${params.output_dir}/quast",
     mode: 'copy',
     pattern: "*report.tsv",
     saveAs: { file -> "combined_${file}"}
+  
+  when:
+  ! params.skip_quast_summary
 
   input:
   path(contig_files)
@@ -469,7 +505,7 @@ process QUAST_SUMMARY {
   path("*report.tsv") optional true
 
   """
-  quast.py ${contig_files} -o .
+  quast.py --no-plots --no-html ${contig_files} -o .
   """
 }
 
@@ -634,3 +670,23 @@ process QUALIFYR_REPORT {
     """
 
   }
+
+process REPORT_IGNORED_IDS {
+  tag "report ignored ids"
+  publishDir "${params.output_dir}", mode: 'copy'
+
+  input:
+  val ignored_ids
+
+  output:
+  path("ignored_ids.txt")
+
+  script:
+  ignored_ids_string = ignored_ids.join(" ")
+  """
+  for IGNORED_ID in $ignored_ids_string
+  do
+      echo \$IGNORED_ID >> ignored_ids.txt
+  done
+  """
+}

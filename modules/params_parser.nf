@@ -21,6 +21,8 @@ def default_params(){
     params.minimum_scaffold_depth = 3
     params.qc_conditions = false
     params.full_output = false
+    params.kmer_min_copy = false
+    params.skip_quast_summary = false
     return params
 }
 

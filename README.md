@@ -48,6 +48,7 @@ Optional arguments include
   - `--qc_conditions` Path to a YAML file containing pass/warning/fail conditions used by [QualiFyr](https://gitlab.com/cgps/qualifyr). An example of the format can be seen [here](qc_conditions.yml) and [another](qc_conditions_nextera_relaxed.yml)  more suitable for reads generated from a Nextera library preparation
   - `--prescreen_genome_size_check` Size in bp of the maximum estimated genome to assemble. Without this any size genome assembly will be attempted
   - `--prescreen_file_size_check` Minumum size in Mb for the input fastq files. Without this any size of file will be attempted (this and prescreen_genome_size_check are mutually exclusive)
+  - `--skip_quast_summary` Large numbers of assemblies may cause quast summary to hang. Use this parameter to skip this step
   - `--full_output` Output pre_trimming fastqc reports, merged_fastqs and corrected_fastqs. These take up signficant disk space and so are not copied to the output_dir by default
 
 ## Workflow process
