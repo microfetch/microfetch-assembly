@@ -670,3 +670,23 @@ process QUALIFYR_REPORT {
     """
 
   }
+
+process REPORT_IGNORED_ACCESSIONS {
+  tag "report ignored accessions"
+  publishDir "${params.output_dir}", mode: 'copy'
+
+  input:
+  val ignored_accessions
+
+  output:
+  path("ignored_accesions.txt")
+
+  script:
+  ignored_accessions_string = ignored_accessions.join(" ")
+  """
+  for IGNORED_ACCESSION in $ignored_accessions_string
+  do
+      echo \$IGNORED_ACCESSION >> ignored_accesions.txt
+  done
+  """
+}
