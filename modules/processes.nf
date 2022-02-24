@@ -412,6 +412,7 @@ process SPADES_ASSEMBLY {
   if (task.attempt <=5 ) {
       """
       spades.py ${reads_argument} --only-assembler ${careful} -o . --tmp-dir /tmp/${sample_id}_assembly -k ${kmers} --threads 1 --memory ${spades_memory} || >&2 echo "SPAdes failed"
+      rm -rf /tmp/${sample_id}_assembly
       mkdir final_fasta_dir
       if [[ -f "scaffolds.fasta" ]]; then
         SPADES_SUCCESS=1
