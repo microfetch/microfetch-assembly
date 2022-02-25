@@ -5,7 +5,7 @@ include {default_params; check_params } from './modules/params_parser'
 include {help_or_version} from './modules/params_utilities'
 include {find_genome_size; find_total_number_of_bases; get_templates} from './modules/process_utilities'
 
-version = '2.1.4'
+version = '2.1.3'
 
 // setup default params
 default_params = default_params()

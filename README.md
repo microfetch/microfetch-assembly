@@ -40,6 +40,7 @@ The mandatory options that should be supplied are
 
 Optional arguments include
   - `--single_end` There is only one read file per sample
+  - `--kmer_min_copy` Define a hard cutoff for the minimum number of copies of a kmer to be included in mash sketch
   - `--depth_cutoff` Downsample each sample to an approximate depth of the value supplied e.g 50 means downsample to 50x depth of coverage . If not specified no downsampling will occur
   - `--careful` Turn on the SPAdes careful option which improves assembly by mapping the reads back to the contigs
   - `--minimum_scaffold_length` The minimum length of a scaffold to keep. Others will be filtered out. Default 500 
