@@ -217,6 +217,9 @@ process FASTQC_MULTIQC {
     pattern: "multiqc_report.html",
     saveAs: { "fastqc_multiqc_report.html" }
 
+  when:
+  ! params.skip_fastqc_multiqc
+
   input:
   path(fastqc_directories) 
 
@@ -376,8 +379,9 @@ process MERGE_READS{
 }
 
 process SPADES_ASSEMBLY {
-  memory { 4.GB * task.attempt }
-  
+  // memory { 4.GB * task.attempt }
+  cpus { task.attempt == 1 ? 1 : 2 }
+
   tag { sample_id }
 
   input:
@@ -520,6 +524,9 @@ process QUAST_MULTIQC {
     pattern: "multiqc_report.html",
     saveAs: { "quast_multiqc_report.html" }
 
+  when:
+  ! params.skip_quast_multiqc
+
   input:
   path(quast_files) 
 
@@ -645,8 +652,11 @@ process QUALIFYR_REPORT {
 
   script:
   workflow_command = workflow.commandLine.replaceAll('"', '\\\\"')
+//  """
+//  qualifyr report -i . -c 'quast.N50,quast.# contigs (>= 0 bp),quast.# contigs (>= 1000 bp),quast.Total length (>= 1000 bp),quast.GC (%),confindr.contam_status,bactinspector.species' -s "Analysis with GHRU Assembly Pipeline version ${version}<br><br>Command line:<br>${workflow_command}"
+//  """
   """
-  qualifyr report -i . -c 'quast.N50,quast.# contigs (>= 0 bp),quast.# contigs (>= 1000 bp),quast.Total length (>= 1000 bp),quast.GC (%),confindr.contam_status,bactinspector.species' -s "Analysis with GHRU Assembly Pipeline version ${version}<br><br>Command line:<br>${workflow_command}"
+  qualifyr report -i . -c 'quast.N50,quast.# contigs,quast.Total length,quast.GC (%),confindr.contam_status,bactinspector.species' -s "Analysis with GHRU Assembly Pipeline version ${version}<br><br>Command line:<br>${workflow_command}"
   """
 
 }

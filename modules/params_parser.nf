@@ -23,6 +23,8 @@ def default_params(){
     params.full_output = false
     params.kmer_min_copy = false
     params.skip_quast_summary = false
+    params.skip_quast_multiqc = false
+    params.skip_fastqc_multiqc = false
     return params
 }
 
