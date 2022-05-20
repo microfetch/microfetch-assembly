@@ -19,21 +19,33 @@ final_params = check_params(merged_params)
 pipeline_start_message(version, final_params)
 
 // include processes for pipelines
-include {GENOME_SIZE_ESTIMATION; PRE_SCREEN_FASTQ_FILESIZE; WRITE_OUT_FILESIZE_CHECK; DETERMINE_MIN_READ_LENGTH; QC_PRE_TRIMMING; TRIMMING; CUTADAPT; QC_POST_TRIMMING; FASTQC_MULTIQC; SPECIES_IDENTIFICATION; READ_CORRECTION; CHECK_FOR_CONTAMINATION; COUNT_NUMBER_OF_BASES; DOWNSAMPLE_READS; MERGE_READS; SPADES_ASSEMBLY; FILTER_SCAFFOLDS; QUAST; QUAST_SUMMARY;  QUAST_MULTIQC; QUALIFYR; QUALIFYR_FAILED_SAMPLE; QUALIFYR_REPORT; WRITE_ASSEMBLY_TO_DIR; REPORT_IGNORED_IDS} from './modules/processes' addParams(final_params)
+include {GENOME_SIZE_ESTIMATION; PRE_SCREEN_FASTQ_FILESIZE; WRITE_OUT_FILESIZE_CHECK; DETERMINE_MIN_READ_LENGTH; QC_PRE_TRIMMING; TRIMMING; CUTADAPT; QC_POST_TRIMMING; FASTQC_MULTIQC; SPECIES_IDENTIFICATION; READ_CORRECTION; CHECK_FOR_CONTAMINATION; COUNT_NUMBER_OF_BASES; DOWNSAMPLE_READS; MERGE_READS; SPADES_ASSEMBLY; FILTER_SCAFFOLDS; QUAST; QUAST_SUMMARY;  QUAST_MULTIQC; QUALIFYR; QUALIFYR_FAILED_SAMPLE; QUALIFYR_REPORT; WRITE_ASSEMBLY_TO_DIR; REPORT_IGNORED_IDS; GET_API_INPUT; DOWNLOAD_FASTQ} from './modules/processes' addParams(final_params)
 include {PRESCREEN_GENOME_SIZE_WORKFLOW; PRE_SCREEN_FASTQ_FILESIZE_WORKFLOW} from './modules/workflows' addParams(final_params)
 
 workflow {
-    // set up input data
-    if (final_params.single_end){
-        sample_id_and_reads = Channel
-        .fromPath("${final_params.input_dir}/${final_params.fastq_pattern}")
-        .map{ file -> tuple (file.baseName.replaceAll(/\..+$/,''), file)}
-        .ifEmpty { error "Cannot find any reads matching: ${final_params.input_dir}/${final_params.fastq_pattern}" }
-    } else {
-        sample_id_and_reads = Channel
-        .fromFilePairs("${final_params.input_dir}/${final_params.fastq_pattern}")
-        .ifEmpty { error "Cannot find any reads matching: ${final_params.input_dir}/${final_params.fastq_pattern}" }
-    }
+		// set up input data
+		if (final_params.api_url){
+			// Read API input for fastq files, download them, and mock the fromFilePairs result
+			api_json = GET_API_INPUT(final_params.api_url)
+			DOWNLOAD_FASTQ(api_json)
+			api_files = DOWNLOAD_FASTQ.out
+			sample_id_and_reads = api_files
+				.collect()
+	      .map{ paths -> tuple(paths[0].baseName.replaceAll(/_[0-9+]\..+$/,''), tuple(paths[0], paths[1]))}
+        .ifEmpty { error "API input did not generate files properly." }
+		} else {
+	    if (final_params.single_end){
+	        sample_id_and_reads = Channel
+	        .fromPath("${final_params.input_dir}/${final_params.fastq_pattern}")
+	        .map{ file -> tuple (file.baseName.replaceAll(/\..+$/,''), file)}
+	        .ifEmpty { error "Cannot find any reads matching: ${final_params.input_dir}/${final_params.fastq_pattern}" }
+	    } else {
+	        sample_id_and_reads = Channel
+	        .fromFilePairs("${final_params.input_dir}/${final_params.fastq_pattern}")
+	        .ifEmpty { error "Cannot find any reads matching: ${final_params.input_dir}/${final_params.fastq_pattern}" }
+	    }
+		}
+		sample_id_and_reads.view()
     // Estimate genome sizes for pre screening (if specified) and for read correction
     GENOME_SIZE_ESTIMATION(sample_id_and_reads)
     genome_sizes = GENOME_SIZE_ESTIMATION.out.map { sample_id, path -> find_genome_size(sample_id, path.text) }
@@ -52,7 +64,7 @@ workflow {
     DETERMINE_MIN_READ_LENGTH(sample_id_and_reads)
     // QC pre-trimming
     QC_PRE_TRIMMING(sample_id_and_reads)
-    
+
     // Read Trimmimg
     if (final_params.cutadapt){
         CUTADAPT(sample_id_and_reads, final_params.adapter_file)
@@ -70,7 +82,7 @@ workflow {
     FASTQC_MULTIQC(QC_POST_TRIMMING.out.fastqc_directories.collect())
     // Species ID
     SPECIES_IDENTIFICATION(TRIMMING.out)
-    
+
     //Read Correction Step
     genome_size_trimmed_fastq = TRIMMING.out.join(genome_sizes)
     READ_CORRECTION(genome_size_trimmed_fastq)
@@ -109,20 +121,20 @@ workflow {
         IDS_TO_PROCESS: success_sample_and_path[0] == "TRUE"
     }
     .set { success_sample_and_paths_branch }
-    
+
     // save ignored genomes in a different list
     success_sample_and_paths_branch.IDS_TO_IGNORE
         .map { it[1] }
         .set { ignored_ids }
-    
+
     REPORT_IGNORED_IDS(ignored_ids.collect())
 
-    // filter out small and low coverage contigs 
+    // filter out small and low coverage contigs
     success_sample_and_paths_branch.IDS_TO_PROCESS
         .map { [it[1], it[2]] }
         .set { ids_to_filter }
 
-    // filter out small and low coverage contigs 
+    // filter out small and low coverage contigs
     FILTER_SCAFFOLDS(ids_to_filter)
 
     // run quast to assess quality of assemblies

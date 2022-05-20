@@ -30,14 +30,21 @@ def default_params(){
 
 def check_params(Map params) { 
     final_params = params
-    // check input dir
-    final_params.input_dir = check_mandatory_parameter(params, 'input_dir') - ~/\/$/
-    // set up output directory
-    final_params.output_dir = check_mandatory_parameter(params, 'output_dir') - ~/\/$/
-    //  check a pattern has been specified
-    if (params.input_dir){
-        final_params.fastq_pattern = check_mandatory_parameter(params, 'fastq_pattern')
+    // API-driven pattern reads input from an API and will eventually call the API back with result.
+    // This means input_dir and output_dir do not need to be explicitly stated
+    if (params['api_url']){
+      if(params['input_dir']) {
+        println "Parameters input_dir and api_url are mutually exclusive. When api_url is specified, inputs are taken from the API."
+        System.exit(1)
+      }
+    } else {
+	    // check input dir
+	    final_params.input_dir = check_mandatory_parameter(params, 'input_dir') - ~/\/$/
+	    // set up output directory
+	    final_params.output_dir = check_mandatory_parameter(params, 'output_dir') - ~/\/$/
     }
+    //  check a pattern has been specified
+    final_params.fastq_pattern = check_mandatory_parameter(params, 'fastq_pattern')
 
     //  check an adapter_file has been specified
     final_params.adapter_file = check_mandatory_parameter(params, 'adapter_file')

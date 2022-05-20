@@ -700,3 +700,69 @@ process REPORT_IGNORED_IDS {
   done
   """
 }
+
+process GET_API_INPUT {
+	tag "$api_url"
+	errorStrategy 'retry'
+  maxRetries 3
+
+	input:
+		val api_url
+
+	output:
+		path("api_response.json")
+
+	script:
+		"""
+		#!/opt/conda/bin/python
+		from requests import request
+
+		r = request('GET', '${api_url}')
+
+		if r.status_code != 200:
+			raise ConnectionError(f"API call failed (Status code {r.status_code})")
+
+		try:
+			r.json()
+		except ValueError:
+			raise ValueError("Unable to interpret API response as JSON.")
+
+		with open("api_response.json", "w+") as f:
+			f.write(r.text)
+		"""
+}
+
+process DOWNLOAD_FASTQ {
+	// Extract the fastq links from an API json response
+	// Download and zip files from fastq links
+	input:
+		path json_file
+
+	output:
+		path('api_input_files/*.fastq.gz')
+
+	script:
+		"""
+		#!/opt/conda/bin/python
+
+		# adapted from https://stackoverflow.com/a/11768443
+
+		from json import loads
+		import shutil
+		import urllib.request as request
+		from contextlib import closing
+		import os
+
+		with open("${json_file}", "r") as f:
+			j = loads(f.read())
+
+		os.mkdir("api_input_files")
+
+		sources = j['fastq_ftp'].split(';')
+		for source in sources:
+			print(f"Downloading {source}")
+
+			os.system(f"wget --tries=5 --wait=2 --output-document api_input_files/{os.path.basename(source)} ftp://{source}")
+
+		"""
+}
