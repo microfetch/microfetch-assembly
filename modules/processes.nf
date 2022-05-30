@@ -702,6 +702,11 @@ process REPORT_IGNORED_IDS {
 }
 
 process GET_API_INPUT {
+	// Read inputs from an API
+	// This is designed to interface with the microfetch-pipeline API.
+	// This initial call is to /request_assembly_candidate/ and should
+	// receive a JSON file with the ENA record summary.
+	// If no records are awaiting assembly, this will return status code 204.
 	tag "$api_url"
 	errorStrategy 'retry'
   maxRetries 3
@@ -717,8 +722,11 @@ process GET_API_INPUT {
 		#!/opt/conda/bin/python
 		from requests import request
 
-		r = request('GET', '${api_url}')
+		r = request('GET', '${api_url}request_assembly_candidate/')
 
+		if r.status_code == 204:
+			# Server says there's nothing for us
+			pass
 		if r.status_code != 200:
 			raise ConnectionError(f"API call failed (Status code {r.status_code})")
 
@@ -764,5 +772,58 @@ process DOWNLOAD_FASTQ {
 
 			os.system(f"wget --tries=5 --wait=2 --output-document api_input_files/{os.path.basename(source)} ftp://{source}")
 
+		"""
+
+	stub:
+		"""
+		cp -r /app/small_test_input api_input_files
+		"""
+}
+
+process UPLOAD_TO_SPACES {
+	input:
+		path assembled_genome
+
+	output:
+		val spaces_url
+
+	script:
+		"""
+
+		"""
+
+	stub:
+		spaces_url = "ftp://example.com/assembly/pipeline/demo/genome.gtca"
+}
+
+process CALLBACK_API {
+	// Send assembly details back to the server.
+	// This interfaces with the microfetch-pipeline API.
+	tag "$api_url"
+	errorStrategy 'retry'
+  maxRetries 3
+
+	input:
+		val api_url
+		val sample_id
+		val spaces_url
+		val report_url
+
+	script:
+		"""
+		#! /opt/conda/bin/python
+
+		import requests
+
+		data = {
+			'assembly_result': 'success',
+			'assembled_genome_url': '${spaces_url}',
+			'assembly_report_url': '${report_url}'
+		}
+
+		r = requests.request('PUT', '${api_url}accession/${sample_id}', data)
+
+		if r.status_code != 204:
+			raise ConnectionError(f"API call failed (Status code {r.status_code})")
 		"""
 }
