@@ -1,6 +1,6 @@
 nextflow.enable.dsl=2
 // include non-process modules
-include {help_message; version_message; complete_message; error_message; pipeline_start_message} from './modules/messages'
+include {help_message; version_message; complete_message; error_message; pipeline_start_message; upload_error_report} from './modules/messages'
 include {default_params; check_params } from './modules/params_parser'
 include {help_or_version} from './modules/params_utilities'
 include {find_genome_size; find_total_number_of_bases; get_templates} from './modules/process_utilities'
@@ -19,7 +19,7 @@ final_params = check_params(merged_params)
 pipeline_start_message(version, final_params)
 
 // include processes for pipelines
-include {GENOME_SIZE_ESTIMATION; PRE_SCREEN_FASTQ_FILESIZE; WRITE_OUT_FILESIZE_CHECK; DETERMINE_MIN_READ_LENGTH; QC_PRE_TRIMMING; TRIMMING; CUTADAPT; QC_POST_TRIMMING; FASTQC_MULTIQC; SPECIES_IDENTIFICATION; READ_CORRECTION; CHECK_FOR_CONTAMINATION; COUNT_NUMBER_OF_BASES; DOWNSAMPLE_READS; MERGE_READS; SPADES_ASSEMBLY; FILTER_SCAFFOLDS; QUAST; QUAST_SUMMARY;  QUAST_MULTIQC; QUALIFYR; QUALIFYR_FAILED_SAMPLE; QUALIFYR_REPORT; WRITE_ASSEMBLY_TO_DIR; REPORT_IGNORED_IDS; GET_API_INPUT; DOWNLOAD_FASTQ} from './modules/processes' addParams(final_params)
+include {GENOME_SIZE_ESTIMATION; PRE_SCREEN_FASTQ_FILESIZE; WRITE_OUT_FILESIZE_CHECK; DETERMINE_MIN_READ_LENGTH; QC_PRE_TRIMMING; TRIMMING; CUTADAPT; QC_POST_TRIMMING; FASTQC_MULTIQC; SPECIES_IDENTIFICATION; READ_CORRECTION; CHECK_FOR_CONTAMINATION; COUNT_NUMBER_OF_BASES; DOWNSAMPLE_READS; MERGE_READS; SPADES_ASSEMBLY; FILTER_SCAFFOLDS; QUAST; QUAST_SUMMARY;  QUAST_MULTIQC; QUALIFYR; QUALIFYR_FAILED_SAMPLE; QUALIFYR_REPORT; WRITE_ASSEMBLY_TO_DIR; REPORT_IGNORED_IDS; GET_API_INPUT; DOWNLOAD_FASTQ; UPLOAD_TO_SPACES; CALLBACK_API} from './modules/processes' addParams(final_params)
 include {PRESCREEN_GENOME_SIZE_WORKFLOW; PRE_SCREEN_FASTQ_FILESIZE_WORKFLOW} from './modules/workflows' addParams(final_params)
 
 workflow {
@@ -143,20 +143,31 @@ workflow {
     QUAST_MULTIQC(QUAST.out.quast_dir.collect())
 
     // summarise quality
-    quality_files = QUAST.out.quast_report.join(CHECK_FOR_CONTAMINATION.out).join(QC_POST_TRIMMING.out.qc_post_trimming_files).join(FILTER_SCAFFOLDS.out.scaffolds_for_single_analysis).join(SPECIES_IDENTIFICATION.out).join(file_size_checks)
     if (final_params.qc_conditions){
+		    quality_files = QUAST.out.quast_report
+		      .join(CHECK_FOR_CONTAMINATION.out)
+		      .join(QC_POST_TRIMMING.out.qc_post_trimming_files)
+		      .join(FILTER_SCAFFOLDS.out.scaffolds_for_single_analysis)
+		      .join(SPECIES_IDENTIFICATION.out)
+		      .join(file_size_checks)
         QUALIFYR(final_params.qc_conditions, quality_files)
         QUALIFYR_FAILED_SAMPLE(excluded_genomes_based_on_file_size, get_templates())
         combined_qualifyr_json_files = QUALIFYR.out.json_files.concat(QUALIFYR_FAILED_SAMPLE.out).collect()
         // combined_qualifyr_json_files.view()
         QUALIFYR_REPORT(combined_qualifyr_json_files, version)
+				QUALIFYR_REPORT.out.view()
     } else {
         scaffolds = FILTER_SCAFFOLDS.out.scaffolds_for_single_analysis.map{ tuple -> tuple[1]}.collect()
         WRITE_ASSEMBLY_TO_DIR(scaffolds)
+				WRITE_ASSEMBLY_TO_DIR.out.view()
     }
+
 }
 workflow.onComplete {
     complete_message(final_params, workflow, version)
+		if(!workflow.success && final_params.api_url){
+			upload_error_report(final_params, workflow, version)
+		}
 }
 
 workflow.onError {

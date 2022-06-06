@@ -6,6 +6,6 @@ small_test_output
 .vscode
 nxf*
 nxf-tmp*
-small_test_output
-
+*test_output
+.env.*
 .idea/

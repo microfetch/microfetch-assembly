@@ -18,6 +18,11 @@ process GENOME_SIZE_ESTIMATION {
       && minima=`cat  ${sample_id}.dist_analysis.json | jq '.global_minima .freq' | tr -d '\\n'`
       mash sketch -o sketch_${sample_id}  -k 32 -m \$minima -r ${reads[0]}  2> mash_stats.out
       """
+
+    stub:
+      """
+        echo "Estimated genome size: 4.79477e+06" > mash_stats.out
+      """
 }
 
 process WRITE_OUT_EXCLUDED_GENOMES {
@@ -28,7 +33,7 @@ process WRITE_OUT_EXCLUDED_GENOMES {
     tuple(val(sample_id), val(genome_size))
 
     output:
-    path("${sample_id}.estimated_genome_size.txt") 
+    path("${sample_id}.estimated_genome_size.txt")
 
     script:
     """
@@ -38,7 +43,7 @@ process WRITE_OUT_EXCLUDED_GENOMES {
 
 process PRE_SCREEN_FASTQ_FILESIZE {
     tag { sample_id }
-    
+
     input:
     tuple(val(sample_id), path(file_pair))
 
@@ -105,13 +110,19 @@ process QC_PRE_TRIMMING {
         fastqc -java=/opt/conda/envs/assembly/bin/java ${file_pair[0]} ${file_pair[1]}
         """
     }
+
+    stub:
+	    """
+	    touch ${file_pair[0]}_fastqc.html
+	    touch ${file_pair[1]}_fastqc.html
+	    """
 }
 
 // TRIMMING
 process TRIMMING {
   memory '4 GB'
   tag { sample_id }
-  
+
   input:
   tuple(val(sample_id), val(min_read_length), path(reads))
   path('adapter_file.fas')
@@ -129,8 +140,15 @@ process TRIMMING {
   }
   """
   mkdir trimmed_fastqs
-  trimmomatic ${method} -threads 1 -phred33 ${file_input_and_outputs} ILLUMINACLIP:adapter_file.fas:2:30:10 SLIDINGWINDOW:4:20 LEADING:25 TRAILING:25 MINLEN:${min_read_length}  
+  trimmomatic ${method} -threads 1 -phred33 ${file_input_and_outputs} ILLUMINACLIP:adapter_file.fas:2:30:10 SLIDINGWINDOW:4:20 LEADING:25 TRAILING:25 MINLEN:${min_read_length}
   """
+
+  stub:
+    """
+    mkdir trimmed_fastqs
+    touch trimmed_fastqs/${reads[0]}
+    touch trimmed_fastqs/${reads[1]}
+    """
 }
 
 // Post-Trimming QC
@@ -140,7 +158,7 @@ process QC_POST_TRIMMING {
   publishDir "${params.output_dir}/fastqc/post_trimming",
     mode: 'copy',
     pattern: "*.html"
-  
+
   input:
   tuple(val(sample_id), path(reads) )
 
@@ -177,22 +195,36 @@ process QC_POST_TRIMMING {
   mv ${r2_prefix}_fastqc/fastqc_data.txt ${r2_prefix}_fastqc_data
   """
   }
+
+  stub:
+	  r1_prefix = reads[0].baseName.replaceFirst(/\\.gz$/, '').split('\\.')[0..-2].join('.')
+	  r2_prefix = reads[1].baseName.replaceFirst(/\\.gz$/, '').split('\\.')[0..-2].join('.')
+    """
+    touch ${sample_id}_R1_fastqc.txt
+    touch ${sample_id}_R2_fastqc.txt
+	  mkdir ${r1_prefix}_fastqc_data
+	  mkdir ${r2_prefix}_fastqc_data
+	  touch ${r1_prefix}_fastqc_data
+    touch ${r2_prefix}_fastqc_data
+    touch ${r1_prefix}_fastqc.html
+    touch ${r2_prefix}_fastqc.html
+    """
 }
 
 // Cutadapt
 process CUTADAPT {
   tag { sample_id }
   publishDir "${params.output_dir}/pruned_fastqs",
-  mode:'copy', 
-  pattern: '*.f*q.gz' 
-  
+  mode:'copy',
+  pattern: '*.f*q.gz'
+
   input:
   tuple(val(sample_id), path(reads) )
   path('adapter_file.fas')
 
   output:
   tuple(val(sample_id), path('pruned_fastqs/*.f*q.gz') )
-  
+
   script:
   if (params.single_end) {
     file_input_and_outputs = "-o pruned_fastqs/${reads[0]} ${reads[0]}"
@@ -221,7 +253,7 @@ process FASTQC_MULTIQC {
   ! params.skip_fastqc_multiqc
 
   input:
-  path(fastqc_directories) 
+  path(fastqc_directories)
 
   output:
   path("multiqc_report.html")
@@ -244,13 +276,18 @@ process SPECIES_IDENTIFICATION {
 
   script:
   """
-  bactinspector check_species -fq ${reads[0]} 
+  bactinspector check_species -fq ${reads[0]}
   """
+
+  stub:
+    """
+    touch species_investigation_dummy.tsv
+    """
 }
 // Read Corection
 process READ_CORRECTION {
   tag { sample_id }
-  
+
   if (params.full_output){
     publishDir "${params.output_dir}",
       mode: "copy",
@@ -262,7 +299,7 @@ process READ_CORRECTION {
 
   output:
   tuple(val(sample_id), path("corrected_fastqs/*.f*q.gz") )
-  
+
   script:
   if (params.single_end) {
     reads_argument = "-r ${reads[0]}"
@@ -278,6 +315,13 @@ process READ_CORRECTION {
     mv \${file} \${new_file}
   done
   """
+
+  stub:
+    """
+    mkdir corrected_fastqs
+    touch corrected_fastqs/ERR586796_1.fastq.gz
+    touch corrected_fastqs/ERR586796_2.fastq.gz
+    """
 }
 
 
@@ -305,9 +349,13 @@ process CHECK_FOR_CONTAMINATION {
   } else { // files with _1 and _2
     """
     confindr.py -i . -o . -d ${db_path} -t 2 -bf 0.025 -b 2 --cross_detail -Xmx 1500m -fid _1 -rid _2
-    """  
+    """
   }
 
+	stub:
+		"""
+			cp /app/test_output/confindr/ERR586796_confindr_report.csv confindr_report.csv
+		"""
 }
 
 process COUNT_NUMBER_OF_BASES {
@@ -356,7 +404,7 @@ process DOWNSAMPLE_READS{
   done
   """
 }
-// merge reads 
+// merge reads
 process MERGE_READS{
   tag { sample_id }
 
@@ -365,7 +413,7 @@ process MERGE_READS{
       mode: 'copy',
       pattern: "merged_fastqs/*.fastq.gz"
   }
-  
+
   input:
   tuple(val(sample_id), path(reads))
 
@@ -376,6 +424,12 @@ process MERGE_READS{
   """
   flash -m 20 -M 100 -t 1 -d merged_fastqs -o ${sample_id} -z ${reads[0]} ${reads[1]}
   """
+
+  stub:
+    """
+    mkdir merged_fastqs
+    cp /app/test_output/merged_fastqs/ERR586796* merged_fastqs
+    """
 }
 
 process SPADES_ASSEMBLY {
@@ -386,7 +440,7 @@ process SPADES_ASSEMBLY {
 
   input:
   tuple(val(sample_id), path(reads), val(min_read_length)) // from min_read_length_and_raw_fastqs
-  
+
   output:
   tuple env(SPADES_SUCCESS), val(sample_id), path("final_fasta_dir/*.fasta") // into scaffolds
 
@@ -437,6 +491,13 @@ process SPADES_ASSEMBLY {
      touch final_fasta_dir/empty.fasta
      """
    }
+
+	stub:
+    """
+    SPADES_SUCCESS="TRUE"
+    mkdir final_fasta_dir
+    cp /app/test_output/assemblies/pass/ERR586796.fasta final_fasta_dir/ERR586796.fasta
+    """
 }
 
 // filter scaffolds to remove small and low coverage contigs
@@ -449,7 +510,7 @@ process FILTER_SCAFFOLDS {
   output:
   tuple(val(sample_id), path("${sample_id}.fasta"), emit: scaffolds_for_single_analysis)
   path("${sample_id}.fasta"), emit: scaffolds_for_combined_analysis
-  
+
   script:
   """
   contig-tools filter -l ${params.minimum_scaffold_length} -c ${params.minimum_scaffold_depth} -f ${scaffold_file}
@@ -468,7 +529,7 @@ process FILTER_SCAFFOLDS {
 // assess assembly with Quast
 process QUAST {
   tag { sample_id }
-    
+
   publishDir "${params.output_dir}/quast",
     mode: 'copy',
     pattern: "report.tsv",
@@ -498,7 +559,7 @@ process QUAST_SUMMARY {
     mode: 'copy',
     pattern: "*report.tsv",
     saveAs: { file -> "combined_${file}"}
-  
+
   when:
   ! params.skip_quast_summary
 
@@ -528,7 +589,7 @@ process QUAST_MULTIQC {
   ! params.skip_quast_multiqc
 
   input:
-  path(quast_files) 
+  path(quast_files)
 
   output:
   path("multiqc_report.html")
@@ -552,7 +613,7 @@ process QUALIFYR {
     mode: 'copy',
     pattern: 'assemblies/warning/*',
     saveAs: { file -> file.split('\\/')[-1] }
-  
+
   publishDir "${params.output_dir}/assemblies/failure",
     mode: 'copy',
     pattern: 'assemblies/failure/*',
@@ -566,7 +627,7 @@ process QUALIFYR {
   path('assemblies/**/*')
   path("${sample_id}.qualifyr.json"), emit: json_files
 
-
+	script:
   """
   # extract min and max genome sizes from bactinspector output, min file size from
   # file_size_check output and replace place holder in conditions file
@@ -580,11 +641,11 @@ process QUALIFYR {
   # if no species match set to 0
   if [ -z \$MIN_GENOME_LENGTH ]; then MIN_GENOME_LENGTH=0; fi
   # add wobble
-  MIN_GENOME_LENGTH=\$(echo \$MIN_GENOME_LENGTH  | awk '{printf("%d",  \$1 * 0.9)}')    
+  MIN_GENOME_LENGTH=\$(echo \$MIN_GENOME_LENGTH  | awk '{printf("%d",  \$1 * 0.9)}')
 
   MIN_FILE_SIZE=\$(cat ${file_size_check_output} | awk -F'\t' 'NR == 2 {print \$2}')
 
-  sed -i "s/MAX_GENOME_LENGTH/\${MAX_GENOME_LENGTH}/" ${qc_conditions_yml} 
+  sed -i "s/MAX_GENOME_LENGTH/\${MAX_GENOME_LENGTH}/" ${qc_conditions_yml}
   sed -i "s/MIN_GENOME_LENGTH/\${MIN_GENOME_LENGTH}/" ${qc_conditions_yml}
   sed -i "s/MIN_FILE_SIZE/\${MIN_FILE_SIZE}/" ${qc_conditions_yml}
 
@@ -613,6 +674,16 @@ process QUALIFYR {
   # make json file
   qualifyr check -y ${qc_conditions_yml} -f ${fastqc_reports} -c ${confindr_report}  -q ${quast_report} -b ${bactinspector_report} -z ${file_size_check_output} -s ${sample_id} -j -o .
   """
+
+  stub:
+    """
+    mkdir assemblies
+    mkdir assemblies/pass
+    mkdir assemblies/failure
+    mkdir assemblies/warning
+    cp /app/test_output/assemblies/pass/ERR586796.fasta assemblies/pass/ERR586796.fasta
+    touch ${sample_id}.qualifyr.json
+    """
 }
 
 
@@ -634,6 +705,11 @@ process QUALIFYR_FAILED_SAMPLE {
   # make json file
   qualifyr check -y ${failed_sample_conditions_template} -f ${fastqc_template} ${fastqc_template} -c ${confindr_template}  -q ${quast_template} -b ${bactinspector_template} -z ${file_size_check_template} -s ${sample_id} -j -o .
   """
+
+  stub:
+    """
+    touch ${sample_id}.qualifyr.json
+    """
 }
 
 process QUALIFYR_REPORT {
@@ -658,6 +734,11 @@ process QUALIFYR_REPORT {
   """
   qualifyr report -i . -c 'quast.N50,quast.# contigs,quast.Total length,quast.GC (%),confindr.contam_status,bactinspector.species' -s "Analysis with GHRU Assembly Pipeline version ${version}<br><br>Command line:<br>${workflow_command}"
   """
+
+  stub:
+    """
+    touch qualifyr_report.dummy
+    """
 
 }
 
@@ -721,6 +802,7 @@ process GET_API_INPUT {
 		"""
 		#!/opt/conda/bin/python
 		from requests import request
+		import os
 
 		r = request('GET', '${api_url}request_assembly_candidate/')
 
@@ -731,7 +813,9 @@ process GET_API_INPUT {
 			raise ConnectionError(f"API call failed (Status code {r.status_code})")
 
 		try:
-			r.json()
+      j = r.json()
+      # Save sample id for future reference
+      os.environ['API_SAMPLE_ID'] = j['accession_id']
 		except ValueError:
 			raise ValueError("Unable to interpret API response as JSON.")
 
@@ -769,31 +853,150 @@ process DOWNLOAD_FASTQ {
 		sources = j['fastq_ftp'].split(';')
 		for source in sources:
 			print(f"Downloading {source}")
-
 			os.system(f"wget --tries=5 --wait=2 --output-document api_input_files/{os.path.basename(source)} ftp://{source}")
 
 		"""
 
 	stub:
 		"""
-		cp -r /app/small_test_input api_input_files
+		mkdir api_input_files
+		touch api_input_files/ERR586796_1.fastq.gz
+		touch api_input_files/ERR586796_2.fastq.gz
+		"""
+}
+
+process FILTER_ASSEMBLY_RESULT {
+	// Check whether the assembled genome is suitable for inclusion in AMR Watch
+	// This runs a python script which uses a different QC JSON file for
+	// each organism.
+
+	// TODO: update to remove sys.argv dependencies
+	script:
+		"""
+		import pandas as pd
+		import sys
+		import json
+
+		# This program filters genomes based on QC metrics.
+		# quality report from Assembly pipeline
+
+		print("QC file:\t"+sys.argv[1])  # test_output/quality_reports/qualifyr_report.tsv
+
+		# Set of QC filters -- should be provided by the API server
+		print("QC filters:\t"+sys.argv[2])  # a JSON file that varys by organism (see filters/qc_staphylococcus_aureus.json)
+
+		# Output file
+		print("OUT file:\t"+sys.argv[3])
+
+		#Load quality_summary table
+		qc_file = sys.argv[1]
+		df = pd.read_csv(qc_file,"\t")
+		def apply_filter(df, metric, f_type, f_value):
+		    if f_type == "min_max":
+		        metric_min, metric_max = f_value
+		        return df[(df[metric]>=metric_min) & (df[metric]<=metric_max)]
+		    elif f_type == "max":
+		        return df[df[metric]<=f_value]
+		    elif f_type == "min":
+		        return df[df[metric]>=f_value]
+		    elif f_type == "contains":
+		        f_value = [x.lower() for x in f_value]
+		        return df[df[metric].str.contains('|'.join(f_value),case=False)]
+		    else:
+		        print("Only 'min_max', 'min', and 'max' can be used as f_type")
+		def get_qc_filters(qc_file):
+		    with open(qc_file, 'r') as f:
+		        data = json.load(f)
+		    filters = data["filters"]
+		    result = []
+		    for f in filters:
+		        temp = []
+		        temp.append(f)
+		        temp.append(filters[f]["type"])
+		        value = filters[f]["value"] if isinstance(filters[f]["value"], int) else tuple(filters[f]["value"])
+		        temp.append(value)
+		        result.append(temp)
+		    return result
+		filtering = get_qc_filters(sys.argv[2])
+		print("# Original size: "+str(len(df)))
+		for filter in filtering:
+		    df = apply_filter(df, filter[0], filter[1], filter[2])
+		    print("# Size after '"+filter[0]+"' filter: "+str(len(df)))
+		out_file = sys.argv[3]
+		df.to_csv( out_file, sep="\t", index=False)
 		"""
 }
 
 process UPLOAD_TO_SPACES {
+	// Upload an assembled genome and its assembly report to Spaces.
 	input:
 		path assembled_genome
+		path report_doc
 
 	output:
-		val spaces_url
+		val spaces_genome_url
+		val spaces_report_url
 
 	script:
 		"""
+		#! /opt/conda/bin/python
+
+		import boto3
+		import os
+
+		region = "fra1"
+		root = os.environ.get("SPACES_ROOT_DIR")
+		if not root:
+			raise EnvironmentError("Required envvar SPACES_ROOT_DIR not set.")
+		key = os.environ.get("SPACES_KEY")
+		if not key:
+			raise EnvironmentError("Required envvar SPACES_KEY not set.")
+		secret = os.environ.get("SPACES_SECRET")
+		if not secret:
+			raise EnvironmentError("Required envvar SPACES_SECRET not set.")
+
+		session = boto3.session.Session()
+		client = session.client(
+			's3',
+			region_name=region,
+			endpoint_url=f'https://{region}.digitaloceanspaces.com',
+			aws_access_key_id=key,
+			aws_secret_access_key=secret
+		)
+
+		with open('${assembled_genome}', 'rb') as file:
+			client.put_object(
+				Bucket=root,
+	      Key=os.path.basename('${assembled_genome}'),
+	      Body=file,
+	      ACL='public-read',
+	      # Metadata={
+	      #   'x-amz-meta-my-key': 'your-value'
+	      # }
+			)
+			os.environ["SPACES_GENOME_URL"] =
+				f"{region}.digitaloceanspaces.com/{root}/{os.path.basename('${assembled_genome}')}"
+
+		with open('${report_doc}', 'rb') as file:
+			client.put_object(
+				Bucket=root,
+	      Key=os.path.basename('${report_doc}'),
+	      Body=file,
+	      ACL='public-read',
+	      # Metadata={
+	      #   'x-amz-meta-my-key': 'your-value'
+	      # }
+			)
+			os.environ["SPACES_REPORT_URL"] =
+				f"{region}.digitaloceanspaces.com/{root}/{os.path.basename('${report_doc}')}"
 
 		"""
+		spaces_genome_url = $SPACES_GENOME_URL
+		spaces_report_url = $SPACES_REPORT_URL
 
 	stub:
-		spaces_url = "ftp://example.com/assembly/pipeline/demo/genome.gtca"
+		spaces_genome_url = "ftp://example.com/assembly/pipeline/demo/genome.gtca"
+		spaces_report_url = "ftp://example.com/assembly/pipeline/demo/genome_report.html"
 }
 
 process CALLBACK_API {

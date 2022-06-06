@@ -3,7 +3,7 @@ LABEL authors="Matt Jaquiery" \
       description="Docker image for development"
 
 RUN mkdir /usr/share/man/man1/  # for Java -- https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=863199#23
-RUN apt-get update; apt-get install -y  gcc procps jq default-jre
+RUN apt-get update; apt-get install -y  gcc procps jq default-jre graphviz
 
 COPY Docker/conda_environments/kat.yml /
 RUN conda env create -f /kat.yml && conda clean -a
