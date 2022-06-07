@@ -22,7 +22,7 @@ try:
         raise ConnectionError(f"Unable to accept assembly candidate via GET {url}.")
 
     # Save sample id for future reference
-    os.environ['API_SAMPLE_ID'] = j['accession_id']
+    os.environ['API_SAMPLE_ID'] = j['id']
     os.environ['API_UPLOAD_URL'] = j['upload_url']
 
     with open("api_response.json", "w+") as f:

@@ -44,10 +44,10 @@ if out_dir:
 
 logger.debug(json.dumps(j))
 
-if j and 'accession_id' in j.keys():
+if j and 'id' in j.keys():
     client.put_object(
         Bucket=root,
-        Key=os.path.basename(f'{j["accession_id"]}.report'),
+        Key=os.path.basename(f'{j["id"]}.txt'),
         Body=error_report_file,
         ACL='public-read',
         Metadata={
@@ -57,7 +57,7 @@ if j and 'accession_id' in j.keys():
 
     data = {
         'assembly_result': 'fail',
-        'assembly_error_report_url': f"{region}.digitaloceanspaces.com/{root}/{j['accession_id']}.report"
+        'assembly_error_report_url': f"{region}.digitaloceanspaces.com/{root}/{j['id']}.txt"
     }
 
     try:

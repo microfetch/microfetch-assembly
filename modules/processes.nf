@@ -925,7 +925,7 @@ process CALLBACK_API {
 
 // 	stub:
 // 		"""
-// 		echo PUT $api_url accession/sample_id/
+// 		echo PUT $api_url record/sample_id/
 // 		echo assembly_result: success
 // 		echo assembled_genome_url: $spaces_url
 // 		echo qualifyr_report: [$qualifyr_report]
