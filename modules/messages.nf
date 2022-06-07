@@ -76,61 +76,12 @@ def error_message(nextflow.script.WorkflowMetadata workflow){
 }
 
 def upload_error_report(Map params, nextflow.script.WorkflowMetadata workflow, String version){
-    id = env.api_sample_id? env.sample_id : workflow.sessionId
     // Place the error report on Digital Ocean Spaces, and report failure to the API
-    """
-    #! /opt/conda/bin/python
-
-    import boto3
-    import os
-    import requests
-
-    region = "fra1"
-    root = os.environ.get("SPACES_ROOT_DIR")
-    if not root:
-      raise EnvironmentError("Required envvar SPACES_ROOT_DIR not set.")
-    key = os.environ.get("SPACES_KEY")
-    if not key:
-      raise EnvironmentError("Required envvar SPACES_KEY not set.")
-    secret = os.environ.get("SPACES_SECRET")
-    if not secret:
-      raise EnvironmentError("Required envvar SPACES_SECRET not set.")
-
-    session = boto3.session.Session()
-    client = session.client(
-      's3',
-      region_name=region,
-      endpoint_url=f'https://{region}.digitaloceanspaces.com',
-      aws_access_key_id=key,
-      aws_secret_access_key=secret
-    )
-
-    filename = '${env.id}'
-
-    file = bytes((
-      "Error message: ${workflow.errorMessage}"
-    ))
-
-    client.put_object(
-      Bucket=root,
-      Key=os.path.basename(f'{filename}.report'),
-      Body=file,
-      ACL='public-read',
-      # Metadata={
-      #   'x-amz-meta-my-key': 'your-value'
-      # }
-    )
-
-    # Upload report to API
-    data = {
-			'assembly_result': 'fail',
-			'assembly_error_report_url': f"{region}.digitaloceanspaces.com/{root}/{filename}.report"
-               # TODO: If there's a qualifyr report upload that, too
-    }
-
-	r = requests.request('PUT', '${params.api_url}accession/${env.sample_id}', data)
-
-	if r.status_code != 204:
-	    raise ConnectionError(f"API call failed (Status code {r.status_code})")
-    """
+    print "Uploading error report..."
+    fileName = "${params.output_dir}/api_interaction/error.txt"
+    errorFile = new File(fileName)
+    errorFile.append(workflow.errorReport)
+    call = "python ${workflow.projectDir}/templates/api_interaction/callback_api_error.py ${params.output_dir} ${params.api_url} ${fileName}"
+    call.execute()
+    println " complete."
 }

@@ -19,8 +19,15 @@ final_params = check_params(merged_params)
 pipeline_start_message(version, final_params)
 
 // include processes for pipelines
-include {GENOME_SIZE_ESTIMATION; PRE_SCREEN_FASTQ_FILESIZE; WRITE_OUT_FILESIZE_CHECK; DETERMINE_MIN_READ_LENGTH; QC_PRE_TRIMMING; TRIMMING; CUTADAPT; QC_POST_TRIMMING; FASTQC_MULTIQC; SPECIES_IDENTIFICATION; READ_CORRECTION; CHECK_FOR_CONTAMINATION; COUNT_NUMBER_OF_BASES; DOWNSAMPLE_READS; MERGE_READS; SPADES_ASSEMBLY; FILTER_SCAFFOLDS; QUAST; QUAST_SUMMARY;  QUAST_MULTIQC; QUALIFYR; QUALIFYR_FAILED_SAMPLE; QUALIFYR_REPORT; WRITE_ASSEMBLY_TO_DIR; REPORT_IGNORED_IDS; GET_API_INPUT; DOWNLOAD_FASTQ; UPLOAD_TO_SPACES; CALLBACK_API} from './modules/processes' addParams(final_params)
+include {GENOME_SIZE_ESTIMATION; PRE_SCREEN_FASTQ_FILESIZE; WRITE_OUT_FILESIZE_CHECK; DETERMINE_MIN_READ_LENGTH; QC_PRE_TRIMMING; TRIMMING; CUTADAPT; QC_POST_TRIMMING; FASTQC_MULTIQC; SPECIES_IDENTIFICATION; READ_CORRECTION; CHECK_FOR_CONTAMINATION; COUNT_NUMBER_OF_BASES; DOWNSAMPLE_READS; MERGE_READS; SPADES_ASSEMBLY; FILTER_SCAFFOLDS; QUAST; QUAST_SUMMARY;  QUAST_MULTIQC; QUALIFYR; QUALIFYR_FAILED_SAMPLE; QUALIFYR_REPORT; WRITE_ASSEMBLY_TO_DIR; REPORT_IGNORED_IDS; GET_API_INPUT; DOWNLOAD_FASTQ; FILTER_ASSEMBLY_RESULT; UPLOAD_TO_SPACES; CALLBACK_API} from './modules/processes' addParams(final_params)
 include {PRESCREEN_GENOME_SIZE_WORKFLOW; PRE_SCREEN_FASTQ_FILESIZE_WORKFLOW} from './modules/workflows' addParams(final_params)
+
+process DIE {
+    """
+    echo 'dying...'
+    exit 1
+    """
+}
 
 workflow {
 		// set up input data
@@ -155,7 +162,11 @@ workflow {
         combined_qualifyr_json_files = QUALIFYR.out.json_files.concat(QUALIFYR_FAILED_SAMPLE.out).collect()
         // combined_qualifyr_json_files.view()
         QUALIFYR_REPORT(combined_qualifyr_json_files, version)
-				QUALIFYR_REPORT.out.view()
+        if (final_params.api_url){
+					FILTER_ASSEMBLY_RESULT(QUALIFYR_REPORT.out, GET_API_INPUT.out)
+					UPLOAD_TO_SPACES(FILTER_SCAFFOLDS.out.scaffolds_for_combined_analysis, QUALIFYR_REPORT.out)
+					CALLBACK_API(final_params.api_url, GET_API_INPUT.out, UPLOAD_TO_SPACES.out, QUALIFYR_REPORT.out)
+        }
     } else {
         scaffolds = FILTER_SCAFFOLDS.out.scaffolds_for_single_analysis.map{ tuple -> tuple[1]}.collect()
         WRITE_ASSEMBLY_TO_DIR(scaffolds)
@@ -165,11 +176,11 @@ workflow {
 }
 workflow.onComplete {
     complete_message(final_params, workflow, version)
-		if(!workflow.success && final_params.api_url){
-			upload_error_report(final_params, workflow, version)
-		}
 }
 
 workflow.onError {
     error_message(workflow)
+    if (final_params.api_url){
+        upload_error_report(final_params, workflow, version)
+    }
 }

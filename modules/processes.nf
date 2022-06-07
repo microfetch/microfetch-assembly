@@ -21,7 +21,7 @@ process GENOME_SIZE_ESTIMATION {
 
     stub:
       """
-        echo "Estimated genome size: 4.79477e+06" > mash_stats.out
+      echo "Estimated genome size: 4.79477e+06" > mash_stats.out
       """
 }
 
@@ -53,6 +53,11 @@ process PRE_SCREEN_FASTQ_FILESIZE {
     script:
     """
     stat -Lc %s ${file_pair[0]} |  awk '{printf "%f", \$1/1000000}'
+    """
+
+    stub:
+    """
+    echo 11000000
     """
 }
 
@@ -354,7 +359,7 @@ process CHECK_FOR_CONTAMINATION {
 
 	stub:
 		"""
-			cp /app/test_output/confindr/ERR586796_confindr_report.csv confindr_report.csv
+		cp /app/test_output/confindr/ERR586796_confindr_report.csv confindr_report.csv
 		"""
 }
 
@@ -736,9 +741,9 @@ process QUALIFYR_REPORT {
   """
 
   stub:
-    """
-    touch qualifyr_report.dummy
-    """
+		"""
+		echo "quast.N50.metric_value\tquast.N50.check_result\n20\tPASS" > qualifyr_report.dummy.tsv
+		"""
 
 }
 
@@ -788,9 +793,12 @@ process GET_API_INPUT {
 	// This initial call is to /request_assembly_candidate/ and should
 	// receive a JSON file with the ENA record summary.
 	// If no records are awaiting assembly, this will return status code 204.
+
+	// TODO: accept candidate respecting API's upload_url field
 	tag "$api_url"
 	errorStrategy 'retry'
   maxRetries 3
+  publishDir "${params.output_dir}/api_interaction", mode: 'copy'
 
 	input:
 		val api_url
@@ -799,34 +807,22 @@ process GET_API_INPUT {
 		path("api_response.json")
 
 	script:
-		"""
-		#!/opt/conda/bin/python
-		from requests import request
-		import os
+		template "api_interaction/get_api_input.py"
 
-		r = request('GET', '${api_url}request_assembly_candidate/')
-
-		if r.status_code == 204:
-			# Server says there's nothing for us
-			pass
-		if r.status_code != 200:
-			raise ConnectionError(f"API call failed (Status code {r.status_code})")
-
-		try:
-      j = r.json()
-      # Save sample id for future reference
-      os.environ['API_SAMPLE_ID'] = j['accession_id']
-		except ValueError:
-			raise ValueError("Unable to interpret API response as JSON.")
-
-		with open("api_response.json", "w+") as f:
-			f.write(r.text)
-		"""
+// 	stub:
+// 		"""
+// 		echo GET ${api_url}request_assembly_candidate/
+// 		echo Stubbed based on templates/api_response.json
+// 		cp /app/templates/api_response.json api_response.json
+// 		"""
 }
 
 process DOWNLOAD_FASTQ {
 	// Extract the fastq links from an API json response
 	// Download and zip files from fastq links
+	tag "$json_file.baseName"
+  publishDir "${params.output_dir}/api_interaction", mode: 'symlink'
+
 	input:
 		path json_file
 
@@ -835,7 +831,7 @@ process DOWNLOAD_FASTQ {
 
 	script:
 		"""
-		#!/opt/conda/bin/python
+		#! /usr/bin/env python
 
 		# adapted from https://stackoverflow.com/a/11768443
 
@@ -857,176 +853,81 @@ process DOWNLOAD_FASTQ {
 
 		"""
 
-	stub:
-		"""
-		mkdir api_input_files
-		touch api_input_files/ERR586796_1.fastq.gz
-		touch api_input_files/ERR586796_2.fastq.gz
-		"""
+// 	stub:
+// 		"""
+// 		mkdir api_input_files
+// 		touch api_input_files/ERR586796_1.fastq.gz
+// 		touch api_input_files/ERR586796_2.fastq.gz
+// 		"""
 }
 
 process FILTER_ASSEMBLY_RESULT {
+	debug true
 	// Check whether the assembled genome is suitable for inclusion in AMR Watch
 	// This runs a python script which uses a different QC JSON file for
 	// each organism.
+  publishDir "${params.output_dir}/api_interaction", mode: "copy"
 
-	// TODO: update to remove sys.argv dependencies
+	input:
+		path(qc_file)
+		path(api_response)
+
+	output:
+		path("post_assembly_filter.tsv")
+
 	script:
+		template "api_interaction/filter_assembly_result.py"
+
+	stub:
 		"""
-		import pandas as pd
-		import sys
-		import json
-
-		# This program filters genomes based on QC metrics.
-		# quality report from Assembly pipeline
-
-		print("QC file:\t"+sys.argv[1])  # test_output/quality_reports/qualifyr_report.tsv
-
-		# Set of QC filters -- should be provided by the API server
-		print("QC filters:\t"+sys.argv[2])  # a JSON file that varys by organism (see filters/qc_staphylococcus_aureus.json)
-
-		# Output file
-		print("OUT file:\t"+sys.argv[3])
-
-		#Load quality_summary table
-		qc_file = sys.argv[1]
-		df = pd.read_csv(qc_file,"\t")
-		def apply_filter(df, metric, f_type, f_value):
-		    if f_type == "min_max":
-		        metric_min, metric_max = f_value
-		        return df[(df[metric]>=metric_min) & (df[metric]<=metric_max)]
-		    elif f_type == "max":
-		        return df[df[metric]<=f_value]
-		    elif f_type == "min":
-		        return df[df[metric]>=f_value]
-		    elif f_type == "contains":
-		        f_value = [x.lower() for x in f_value]
-		        return df[df[metric].str.contains('|'.join(f_value),case=False)]
-		    else:
-		        print("Only 'min_max', 'min', and 'max' can be used as f_type")
-		def get_qc_filters(qc_file):
-		    with open(qc_file, 'r') as f:
-		        data = json.load(f)
-		    filters = data["filters"]
-		    result = []
-		    for f in filters:
-		        temp = []
-		        temp.append(f)
-		        temp.append(filters[f]["type"])
-		        value = filters[f]["value"] if isinstance(filters[f]["value"], int) else tuple(filters[f]["value"])
-		        temp.append(value)
-		        result.append(temp)
-		    return result
-		filtering = get_qc_filters(sys.argv[2])
-		print("# Original size: "+str(len(df)))
-		for filter in filtering:
-		    df = apply_filter(df, filter[0], filter[1], filter[2])
-		    print("# Size after '"+filter[0]+"' filter: "+str(len(df)))
-		out_file = sys.argv[3]
-		df.to_csv( out_file, sep="\t", index=False)
+		cp ${qc_file} post_assembly_filter.tsv
 		"""
 }
 
 process UPLOAD_TO_SPACES {
+	tag "$assembled_genome"
 	// Upload an assembled genome and its assembly report to Spaces.
 	input:
 		path assembled_genome
-		path report_doc
+		path qualifyr_report
 
 	output:
-		val spaces_genome_url
-		val spaces_report_url
+		stdout
 
 	script:
-		"""
-		#! /opt/conda/bin/python
+		template "api_interaction/upload_to_spaces.py"
 
-		import boto3
-		import os
+// 	stub:
+// 		"""
+// 		echo ftp://example.com/assembly/pipeline/demo/genome.fasta
+// 		"""
 
-		region = "fra1"
-		root = os.environ.get("SPACES_ROOT_DIR")
-		if not root:
-			raise EnvironmentError("Required envvar SPACES_ROOT_DIR not set.")
-		key = os.environ.get("SPACES_KEY")
-		if not key:
-			raise EnvironmentError("Required envvar SPACES_KEY not set.")
-		secret = os.environ.get("SPACES_SECRET")
-		if not secret:
-			raise EnvironmentError("Required envvar SPACES_SECRET not set.")
-
-		session = boto3.session.Session()
-		client = session.client(
-			's3',
-			region_name=region,
-			endpoint_url=f'https://{region}.digitaloceanspaces.com',
-			aws_access_key_id=key,
-			aws_secret_access_key=secret
-		)
-
-		with open('${assembled_genome}', 'rb') as file:
-			client.put_object(
-				Bucket=root,
-	      Key=os.path.basename('${assembled_genome}'),
-	      Body=file,
-	      ACL='public-read',
-	      # Metadata={
-	      #   'x-amz-meta-my-key': 'your-value'
-	      # }
-			)
-			os.environ["SPACES_GENOME_URL"] =
-				f"{region}.digitaloceanspaces.com/{root}/{os.path.basename('${assembled_genome}')}"
-
-		with open('${report_doc}', 'rb') as file:
-			client.put_object(
-				Bucket=root,
-	      Key=os.path.basename('${report_doc}'),
-	      Body=file,
-	      ACL='public-read',
-	      # Metadata={
-	      #   'x-amz-meta-my-key': 'your-value'
-	      # }
-			)
-			os.environ["SPACES_REPORT_URL"] =
-				f"{region}.digitaloceanspaces.com/{root}/{os.path.basename('${report_doc}')}"
-
-		"""
-		spaces_genome_url = $SPACES_GENOME_URL
-		spaces_report_url = $SPACES_REPORT_URL
-
-	stub:
-		spaces_genome_url = "ftp://example.com/assembly/pipeline/demo/genome.gtca"
-		spaces_report_url = "ftp://example.com/assembly/pipeline/demo/genome_report.html"
 }
 
 process CALLBACK_API {
+	debug true
 	// Send assembly details back to the server.
 	// This interfaces with the microfetch-pipeline API.
+
+	// TODO: post_assembly_filters
 	tag "$api_url"
 	errorStrategy 'retry'
   maxRetries 3
 
 	input:
 		val api_url
-		val sample_id
+		val api_response
 		val spaces_url
-		val report_url
+		val qualifyr_report
 
 	script:
-		"""
-		#! /opt/conda/bin/python
+		template "api_interaction/callback_api.py"
 
-		import requests
-
-		data = {
-			'assembly_result': 'success',
-			'assembled_genome_url': '${spaces_url}',
-			'assembly_report_url': '${report_url}'
-		}
-
-		r = requests.request('PUT', '${api_url}accession/${sample_id}', data)
-
-		if r.status_code != 204:
-			raise ConnectionError(f"API call failed (Status code {r.status_code})")
-		"""
+// 	stub:
+// 		"""
+// 		echo PUT $api_url accession/sample_id/
+// 		echo assembly_result: success
+// 		echo assembled_genome_url: $spaces_url
+// 		echo qualifyr_report: [$qualifyr_report]
+// 		"""
 }
