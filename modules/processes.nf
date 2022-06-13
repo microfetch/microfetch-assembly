@@ -742,30 +742,31 @@ process QUALIFYR_REPORT {
 
   stub:
 		"""
+		touch qualifyr_report.dummy.html
 		echo "quast.N50.metric_value\tquast.N50.check_result\n20\tPASS" > qualifyr_report.dummy.tsv
 		"""
 
 }
 
-  process WRITE_ASSEMBLY_TO_DIR {
-    tag { "assemblies to output" }
+process WRITE_ASSEMBLY_TO_DIR {
+  tag { "assemblies to output" }
 
-    publishDir "${params.output_dir}",
-      mode: "copy"
+  publishDir "${params.output_dir}",
+    mode: "copy"
 
-    input:
-    path(scaffold_files)
+  input:
+  path(scaffold_files)
 
-    output:
-    path("assemblies")
+  output:
+  path("assemblies")
 
-    script:
-    """
-    mkdir assemblies
-    mv ${scaffold_files} assemblies/
-    """
+  script:
+  """
+  mkdir assemblies
+  mv ${scaffold_files} assemblies/
+  """
 
-  }
+}
 
 process REPORT_IGNORED_IDS {
   tag "report ignored ids"
@@ -800,28 +801,32 @@ process GET_API_INPUT {
   maxRetries 3
   publishDir "${params.output_dir}/api_interaction", mode: 'copy'
 
-	input:
-		val api_url
+  input:
+    val api_url
 
-	output:
-		path("api_response.json")
+  output:
+    path("api_response.json")
 
-	script:
-		template "api_interaction/get_api_input.py"
+  script:
+    template "api_interaction/get_api_input.py"
 
-// 	stub:
-// 		"""
-// 		echo GET ${api_url}request_assembly_candidate/
-// 		echo Stubbed based on templates/api_response.json
-// 		cp /app/templates/api_response.json api_response.json
-// 		"""
+  stub:
+    if (params.no_stub =~ /(^|_)api(_|$)/) {
+      template "api_interaction/get_api_input.py"
+    } else {
+      """
+      echo GET ${api_url}request_assembly_candidate/
+      echo Stubbed based on templates/api_response.json
+      cp /app/templates/api_response.json api_response.json
+      """
+    }
 }
 
 process DOWNLOAD_FASTQ {
 	// Extract the fastq links from an API json response
 	// Download and zip files from fastq links
 	tag "$json_file.baseName"
-  publishDir "${params.output_dir}/api_interaction", mode: 'symlink'
+    publishDir "${params.output_dir}/api_interaction", mode: 'symlink'
 
 	input:
 		path json_file
@@ -830,39 +835,26 @@ process DOWNLOAD_FASTQ {
 		path('api_input_files/*.fastq.gz')
 
 	script:
-		"""
-		#! /usr/bin/env python
+		template "api_interaction/download_fastq.py"
 
-		# adapted from https://stackoverflow.com/a/11768443
-
-		from json import loads
-		import shutil
-		import urllib.request as request
-		from contextlib import closing
-		import os
-
-		with open("${json_file}", "r") as f:
-			j = loads(f.read())
-
-		os.mkdir("api_input_files")
-
-		sources = j['fastq_ftp'].split(';')
-		for source in sources:
-			print(f"Downloading {source}")
-			os.system(f"wget --tries=5 --wait=2 --output-document api_input_files/{os.path.basename(source)} ftp://{source}")
-
-		"""
-
-// 	stub:
-// 		"""
-// 		mkdir api_input_files
-// 		touch api_input_files/ERR586796_1.fastq.gz
-// 		touch api_input_files/ERR586796_2.fastq.gz
-// 		"""
+	stub:
+    if (params.no_stub =~ /(^|_)download(_|$)/) {
+      template "api_interaction/download_fastq.py"
+    } else {
+      """
+      mkdir api_input_files
+      touch api_input_files/ERR586796_1.fastq.gz
+      touch api_input_files/ERR586796_2.fastq.gz
+      """
+    }
 }
 
 process FILTER_ASSEMBLY_RESULT {
 	debug true
+	errorStrategy 'retry'
+  maxRetries 3
+
+	tag "${qc_file[1]}:${api_response}"
 	// Check whether the assembled genome is suitable for inclusion in AMR Watch
 	// This runs a python script which uses a different QC JSON file for
 	// each organism.
@@ -879,17 +871,25 @@ process FILTER_ASSEMBLY_RESULT {
 		template "api_interaction/filter_assembly_result.py"
 
 	stub:
-		"""
-		cp ${qc_file} post_assembly_filter.tsv
-		"""
+		if (params.no_stub =~ /(^|_)filter(_|$)/) {
+      template "api_interaction/filter_assembly_result.py"
+    } else {
+			"""
+			cp ${qc_file[1]} post_assembly_filter.tsv
+			"""
+		}
 }
 
 process UPLOAD_TO_SPACES {
-	tag "$assembled_genome"
+	tag "${assembled_genome}, ${qualifyr_report}"
+	// Error strategy required because somehow templating doesn't work first time through?
+	errorStrategy 'retry'
+  maxRetries 3
+
 	// Upload an assembled genome and its assembly report to Spaces.
 	input:
-		path assembled_genome
-		path qualifyr_report
+		val assembled_genome
+		val qualifyr_report
 
 	output:
 		stdout
@@ -897,10 +897,14 @@ process UPLOAD_TO_SPACES {
 	script:
 		template "api_interaction/upload_to_spaces.py"
 
-// 	stub:
-// 		"""
-// 		echo ftp://example.com/assembly/pipeline/demo/genome.fasta
-// 		"""
+	stub:
+		if (params.no_stub =~ /(^|_)upload(_|$)/) {
+      template "api_interaction/upload_to_spaces.py"
+    } else {
+			"""
+			echo ftp://example.com/assembly/pipeline/demo/genome.fasta
+			"""
+		}
 
 }
 
@@ -923,11 +927,15 @@ process CALLBACK_API {
 	script:
 		template "api_interaction/callback_api.py"
 
-// 	stub:
-// 		"""
-// 		echo PUT $api_url record/sample_id/
-// 		echo assembly_result: success
-// 		echo assembled_genome_url: $spaces_url
-// 		echo qualifyr_report: [$qualifyr_report]
-// 		"""
+	stub:
+		if (params.no_stub =~ /(^|_)api(_|$)/) {
+      template "api_interaction/get_api_input.py"
+    } else {
+			"""
+			echo PUT $api_url record/sample_id/
+			echo assembly_result: success
+			echo assembled_genome_url: $spaces_url
+			echo qualifyr_report: [$qualifyr_report]
+			"""
+		}
 }

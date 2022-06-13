@@ -45,15 +45,16 @@ if out_dir:
 logger.debug(json.dumps(j))
 
 if j and 'id' in j.keys():
-    client.put_object(
-        Bucket=root,
-        Key=os.path.basename(f'{j["id"]}.txt'),
-        Body=error_report_file,
-        ACL='public-read',
-        Metadata={
-            'x-amz-meta-error-report': 'true'
-        }
-    )
+    with open(error_report_file, 'rb') as error_report:
+        client.put_object(
+            Body=error_report.read(),
+            Bucket=root,
+            Key=os.path.basename(f'{j["id"]}.txt'),
+            ACL='public-read',
+            Metadata={
+                'x-amz-meta-error-report': 'true'
+            }
+        )
 
     data = {
         'assembly_result': 'fail',

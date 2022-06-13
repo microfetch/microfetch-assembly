@@ -16,7 +16,7 @@ def help_message() {
         nextflow run main.nf --input_dir /path/to/reads --fastq_pattern '*{R,_}{1,2}*.fastq.gz' --output_dir /path/to/output \
                              --other_param_1 --other_param_2 -resume
         Mandatory arguments:
-        --input_dir      Path to input directory containing the fastq files to be assembled
+        --input_dir      Path to input directory containing the fastq files to be assembled. Mandatory unless --api_url is specified
         --fastq_pattern  The regular expression that will match fastq files e.g '*{R,_}{1,2}*.fastq.gz'
         --output_dir     Path to output directory
         --adapter_file   The path to a fasta file containing adapter sequences to trim from reads
@@ -32,6 +32,8 @@ def help_message() {
         --minimum_scaffold_depth The minimum depth of coverage a scaffold must have to be kept. Others will be filtered out. Default 3
         --qc_conditions Path to a YAML file containing pass/warning/fail conditions used by QualiFyr (https://gitlab.com/cgps/qualifyr)
         --full_output Output pre_trimming fastqc reports, merged_fastqs and corrected_fastqs. These take up signficant disk space
+        --api_url URL of an API that will handle input
+        --no_stub _-separated list of functionality to avoid stubbing of when -stub-run is enabled. Possible values: api, download, filter, upload
         """.stripIndent()
     )
 }

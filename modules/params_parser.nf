@@ -25,6 +25,7 @@ def default_params(){
     params.skip_quast_summary = false
     params.skip_quast_multiqc = false
     params.skip_fastqc_multiqc = false
+    params.no_stub = ""
     return params
 }
 

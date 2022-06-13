@@ -9,3 +9,7 @@ nxf-tmp*
 *test_output
 .env.*
 .idea/
+
+.default_output/
+
+test.nf

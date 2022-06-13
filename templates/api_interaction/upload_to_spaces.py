@@ -1,12 +1,11 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
 
 # This sends the upload URL back to nextflow using stdout,
 # so don't include other print() calls.
-
 import boto3
 import os
-import re
-import csv
+# import re
+# import csv
 
 region = "fra1"
 root = os.environ.get("SPACES_ROOT_DIR")
@@ -28,20 +27,22 @@ client = session.client(
     aws_secret_access_key=secret
 )
 
-try:
-    with open("${qualifyr_report}", "r") as q_report:
-        reader = csv.DictReader(q_report, delimiter="\t")
-        report = next(reader)
-        metadata = {f'x-amz-meta-{re.sub("[^0-9a-zA-Z]", "", k)}': v for k, v in report.items()}
-except StopIteration:
-    metadata = {}
+# Metadata seems to give us an AccessDenied error
+# try:
+#     with open('${qualifyr_report[1]}', "r") as q_report:
+#         reader = csv.DictReader(q_report, delimiter='\\t')
+#         report = next(reader)
+#         metadata = {re.sub("[^0-9a-zA-Z]", "", k): v for k, v in report.items()}
+# except StopIteration:
+#     metadata = {}
 
-with open('${assembled_genome}', 'rb') as file:
+with open('${assembled_genome}', 'rb') as f:
     client.put_object(
+        Body=f,
+        ContentLength=os.path.getsize('${assembled_genome}'),
         Bucket=root,
         Key=os.path.basename('${assembled_genome}'),
-        Body=file,
         ACL='public-read',
-        Metadata=metadata
+        # Metadata=metadata
     )
 print(f"{region}.digitaloceanspaces.com/{root}/{os.path.basename('${assembled_genome}')}", end='')
