@@ -39,7 +39,7 @@ workflow {
 			sample_id_and_reads = api_files
 				.collect()
 	      .map{ paths -> tuple(paths[0].baseName.replaceAll(/_[0-9+]\..+$/,''), tuple(paths[0], paths[1]))}
-        .ifEmpty { error "API input did not generate files properly." }
+        .ifEmpty { exit 0, "No API input to process." }
 		} else {
 	    if (final_params.single_end){
 	        sample_id_and_reads = Channel

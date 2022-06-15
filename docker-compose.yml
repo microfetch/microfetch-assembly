@@ -13,4 +13,7 @@ services:
 # # Test with:
 # # (while running microfetch-pipeline web service on host port 8000)
 # cd app
+# nextflow run /app/main.nf --adapter_file /app/adapters.fas --qc_conditions /app/qc_conditions_nextera_relaxed_dev.yml --fastq_pattern '*{R,_}{1,2}.f*q.gz' --output_dir /app/ --depth_cutoff 100 --prescreen_file_size_check 12 --confindr_db_path /confindr_database --careful --kmer_min_copy 3 --skip_quast_summary --skip_quast_multiqc --skip_fastqc_multiqc -w /app/work -qs 1000 -profile test --output_dir /app/test_output --api_url http://host.docker.internal:8000/
+# # Stub with:
 # nextflow run /app/main.nf --adapter_file /app/adapters.fas --qc_conditions /app/qc_conditions_nextera_relaxed_dev.yml --fastq_pattern '*{R,_}{1,2}.f*q.gz' --output_dir /app/ --depth_cutoff 100 --prescreen_file_size_check 12 --confindr_db_path /confindr_database --careful --kmer_min_copy 3 --skip_quast_summary --skip_quast_multiqc --skip_fastqc_multiqc -w /app/work -qs 1000 -profile test --output_dir /app/test_output --api_url http://host.docker.internal:8000/ -stub-run
+# # and see help string for fine control of stubbing behaviour with --no-stub X_Y_Z

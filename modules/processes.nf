@@ -856,16 +856,10 @@ process FILTER_ASSEMBLY_RESULT {
 
 	tag "${qc_file[1]}:${api_response}"
 	// Check whether the assembled genome is suitable for inclusion in AMR Watch
-	// This runs a python script which uses a different QC JSON file for
-	// each organism.
-  publishDir "${params.output_dir}/api_interaction", mode: "copy"
 
 	input:
 		path(qc_file)
 		path(api_response)
-
-	output:
-		path("post_assembly_filter.tsv")
 
 	script:
 		template "api_interaction/filter_assembly_result.py"
