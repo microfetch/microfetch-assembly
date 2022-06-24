@@ -4,8 +4,14 @@
 # so don't include other print() calls.
 import boto3
 import os
-# import re
-# import csv
+import hashlib
+
+# Calculate and store SHA1 digest
+with open('${assembled_genome}', 'rb') as f:
+    sha1 = hashlib.sha1(f.read())
+
+with open("assembled_genome_sha1.txt", "w+") as f:
+    f.write(sha1.hexdigest())
 
 region = "fra1"
 root = os.environ.get("SPACES_ROOT_DIR")
@@ -44,5 +50,9 @@ with open('${assembled_genome}', 'rb') as f:
         Key=os.path.basename('${assembled_genome}'),
         ACL='public-read',
         # Metadata=metadata
+        Metadata={'sha1': sha1.hexdigest()}
     )
-print(f"{region}.digitaloceanspaces.com/{root}/{os.path.basename('${assembled_genome}')}", end='')
+
+# Save upload file path
+with open("assembled_genome_url.txt", "w+") as f:
+    f.write(f"{region}.digitaloceanspaces.com/{root}/{os.path.basename('${assembled_genome}')}")

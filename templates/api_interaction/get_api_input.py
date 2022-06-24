@@ -1,9 +1,10 @@
 #!/usr/bin/env python
+import sys
 from requests import request
 import os
-import re
+import json
 
-url = os.path.join('${api_url}', 'api/request_assembly_candidate/')
+url = os.path.join('${api_url}', 'records/awaiting_assembly/')
 print(f"GET {url}")
 r = request('GET', url)
 
@@ -16,19 +17,38 @@ else:
 
     try:
         j = r.json()
+        if len(j['results']) == 0:
+            raise ConnectionError(f"API has no results for processing")
+        for record in j["results"]:
+            print(record)
+            try:
+                accept_url = record['action_links']['register_assembly_attempt']
+                print(f"GET {accept_url}")
+                r = request('GET', accept_url)
+            except BaseException as e:
+                print(f"Error accepting {record['id']} -- {e}", file=sys.stderr)
 
-        accept_url = j['accept_url']
-        url = os.path.join('${api_url}', re.sub('^/', '', accept_url))
-        print(f"GET {url}")
-        if request('GET', url).status_code != 204:
-            raise ConnectionError(f"Unable to accept assembly candidate via GET {url}.")
+            if r.status_code == 200:
+                print(f"Accepted record {record['id']} for assembly")
+                # Save sample id for future reference
+                os.environ['API_SAMPLE_ID'] = record['id']
+                os.environ['API_UPLOAD_URL'] = record['action_links']['report_assembly_result']
 
-        # Save sample id for future reference
-        os.environ['API_SAMPLE_ID'] = j['id']
-        os.environ['API_UPLOAD_URL'] = j['upload_url']
+                # Patch record with the taxon's post-assembly-filters
+                taxon_response = request('GET', record['taxon'])
+                if taxon_response.status_code == 200:
+                    taxon_json = taxon_response.json()
+                    record['post_assembly_filters'] = taxon_json['post_assembly_filters']
 
-        with open("api_response.json", "w+") as f:
-            f.write(r.text)
+                    with open("api_response.json", "w+") as f:
+                        json.dump(record, f)
+
+                    break
+                else:
+                    print((
+                        "Unable to download post assembly filters for record. "
+                        "The record will be marked as undergiong assembly but not assembled."
+                    ))
 
     except ValueError:
         raise ValueError("Unable to interpret API response as JSON.")

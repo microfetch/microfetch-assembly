@@ -4,15 +4,20 @@ import sys
 import requests
 import json
 import csv
-import re
-import os
 
 with open("${api_response}", "rb") as f:
     response = json.load(f)
 
+with open("${upload_url_file}", "r") as f:
+    upload_url = f.read()
+
+with open("${upload_sha_file}", "r") as f:
+    upload_sha = f.read()
+
 data = {
     'assembly_result': 'success',
-    'assembled_genome_url': """${spaces_url}""".replace("""\n""", '')  # avoid EOL issue
+    'assembled_genome_url': upload_url,
+    'assembled_genome_sha1': upload_sha
 }
 
 try:
@@ -22,14 +27,13 @@ try:
 except StopIteration:
     pass
 
-upload_url = response['upload_url']
-url = os.path.join('${api_url}', re.sub('^/', '', upload_url))
+url = response['action_links']['report_assembly_result']
 
-print(f"PUT {url}")
+print(f"POST {url}")
 print(data)
 
-r = requests.request('PUT', url, data=data)
+r = requests.request('POST', url, data=data)
 
-if r.status_code != 204:
-    print(r.json()['error'], file=sys.stderr)
+if r.status_code != 200:
+    print(r.text, file=sys.stderr)
     raise ConnectionError(f"API call failed (Status code {r.status_code})")

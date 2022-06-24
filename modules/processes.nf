@@ -826,7 +826,7 @@ process DOWNLOAD_FASTQ {
 	// Extract the fastq links from an API json response
 	// Download and zip files from fastq links
 	tag "$json_file.baseName"
-    publishDir "${params.output_dir}/api_interaction", mode: 'symlink'
+  publishDir "${params.output_dir}/api_interaction", mode: 'symlink'
 
 	input:
 		path json_file
@@ -879,6 +879,7 @@ process UPLOAD_TO_SPACES {
 	// Error strategy required because somehow templating doesn't work first time through?
 	errorStrategy 'retry'
   maxRetries 3
+  publishDir "${params.output_dir}/api_interaction", mode: 'copy'
 
 	// Upload an assembled genome and its assembly report to Spaces.
 	input:
@@ -886,7 +887,7 @@ process UPLOAD_TO_SPACES {
 		val qualifyr_report
 
 	output:
-		stdout
+		tuple path("assembled_genome_url.txt"), path("assembled_genome_sha1.txt")
 
 	script:
 		template "api_interaction/upload_to_spaces.py"
@@ -896,7 +897,8 @@ process UPLOAD_TO_SPACES {
       template "api_interaction/upload_to_spaces.py"
     } else {
 			"""
-			echo ftp://example.com/assembly/pipeline/demo/genome.fasta
+			echo ftp://example.com/assembly/pipeline/demo/genome.fasta > assembled_genome_url.txt
+			touch assembled_genome_sha1.txt
 			"""
 		}
 
@@ -915,7 +917,7 @@ process CALLBACK_API {
 	input:
 		val api_url
 		val api_response
-		val spaces_url
+		tuple(path(upload_url_file), path(upload_sha_file))
 		val qualifyr_report
 
 	script:
@@ -928,7 +930,7 @@ process CALLBACK_API {
 			"""
 			echo PUT $api_url record/sample_id/
 			echo assembly_result: success
-			echo assembled_genome_url: $spaces_url
+			echo assembled_genome_url: $upload_url_file
 			echo qualifyr_report: [$qualifyr_report]
 			"""
 		}
