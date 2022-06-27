@@ -5,6 +5,8 @@
 import boto3
 import os
 import hashlib
+import gzip
+import shutil
 
 # Calculate and store SHA1 digest
 with open('${assembled_genome}', 'rb') as f:
@@ -42,17 +44,26 @@ client = session.client(
 # except StopIteration:
 #     metadata = {}
 
-with open('${assembled_genome}', 'rb') as f:
+zipped_file = f"{os.path.basename('${assembled_genome}')}.gz"
+
+with open('${assembled_genome}', 'rb') as f_in:
+    with gzip.open(zipped_file, 'w+b') as f_out:
+        shutil.copyfileobj(f_in, f_out)
+
+with open(zipped_file, 'rb') as f:
     client.put_object(
         Body=f,
-        ContentLength=os.path.getsize('${assembled_genome}'),
+        ContentLength=os.path.getsize(zipped_file),
         Bucket=root,
-        Key=os.path.basename('${assembled_genome}'),
+        Key=zipped_file,
         ACL='public-read',
         # Metadata=metadata
-        Metadata={'sha1': sha1.hexdigest()}
+        Metadata={
+            'sha1': sha1.hexdigest(),
+            'content-type': 'application/gzip'
+        }
     )
 
 # Save upload file path
 with open("assembled_genome_url.txt", "w+") as f:
-    f.write(f"{region}.digitaloceanspaces.com/{root}/{os.path.basename('${assembled_genome}')}")
+    f.write(f"{region}.digitaloceanspaces.com/{root}/{zipped_file}")

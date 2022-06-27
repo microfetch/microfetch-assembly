@@ -163,8 +163,8 @@ workflow {
         // combined_qualifyr_json_files.view()
         QUALIFYR_REPORT(combined_qualifyr_json_files, version)
         if (final_params.api_url){
-					FILTER_ASSEMBLY_RESULT(QUALIFYR_REPORT.out, GET_API_INPUT.out)
 					UPLOAD_TO_SPACES(FILTER_SCAFFOLDS.out.scaffolds_for_combined_analysis, QUALIFYR_REPORT.out)
+					FILTER_ASSEMBLY_RESULT(QUALIFYR_REPORT.out, GET_API_INPUT.out)
 					CALLBACK_API(final_params.api_url, GET_API_INPUT.out, UPLOAD_TO_SPACES.out, QUALIFYR_REPORT.out)
         }
     } else {
