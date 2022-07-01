@@ -913,6 +913,7 @@ process CALLBACK_API {
 	tag "$api_url"
 	errorStrategy 'retry'
   maxRetries 3
+  publishDir "${params.output_dir}/api_interaction", mode: 'copy'
 
 	input:
 		val api_url

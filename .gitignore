@@ -13,3 +13,5 @@ nxf-tmp*
 .default_output/
 
 test.nf
+
+output/
