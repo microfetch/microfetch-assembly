@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-echo "$PATH"
-cat /etc/environment
+#echo "$PATH"
+#cat /etc/environment
 
 # Check whether no runs have happened or last run has finished
 if ! [ -d "$WORK_DIR" ] || [ -f "$OUTPUT_DIR/api_interaction/complete.txt" ];
@@ -35,6 +35,6 @@ then
   -qs 1000 \
   -profile test
 
-else
-  echo "Pipeline is already running, doing nothing."
+#else
+#  echo "Pipeline is already running, doing nothing."
 fi
