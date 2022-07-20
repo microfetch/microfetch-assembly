@@ -12,6 +12,8 @@ Angela Sofia Garcia  <as.garciav@uniandes.edu.co>
 Oscar Gabriel Beltran  
 [Johan Fabian Bernal](https://gitlab.com/johan.bernal.morales) <johan.bernal.morales@gmail.com>
 
+API integration was added by [Matt Jaquiery](https://github.com/mjaquiery)
+
 ## Instructions
 The dependencies are provided in a Docker image
 ```
@@ -129,3 +131,30 @@ Test command for single end reads
 nextflow run main.nf --input_dir small_test_input --output_dir test_output --fastq_pattern '*{R,_}1.fastq.gz' --adapter_file adapters.fas --qc_conditions qc_conditions_nextera.yml --full_output  --cutadapt --single_end -resume
 ```
 
+## API Integration
+
+The pipeline supports inputs from the [microfetch-pipeline](https://github.com/microfetch/microfetch-pipeline) API.
+To run the pipeline in API mode, an `api_url` is specified instead of an `input_dir`.
+
+The easiest way to run the pipeline in API mode is to use the packaged docker compose setup, 
+which will run single API-connected pipeline instance with cron, 
+starting a new pipeline when the previous one completes.
+To do this, make sure the `API_URL` in the `docker-compose.yml` points to an active API instance.
+
+You will also need an environment file to allow the pipeline to save data to Digital Ocean's Spaces.
+Create this file if it does not exist in the root directory.
+
+### `.env.spaces`
+
+This file needs 3 keys:
+* `SPACES_KEY`
+* `SPACES_SECRET` these two work to manage authorisation in Spaces
+* `SPACES_ROOT_DIR` this can be anything, it helps group pipeline outputs together
+
+### Procedure
+
+The pipeline will launch and query the API for genome files awaiting assembly.
+The pipeline 'checks out' a genome file and attempts to assemble it.
+If successful, the pipeline uploads the assembled file and reports the success back to the API.
+If unsuccessful, the pipeline uploads error data and reports back to the API.
+The process begins again.
