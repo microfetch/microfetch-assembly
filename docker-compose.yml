@@ -9,7 +9,7 @@ services:
       - .:/app
     environment:
       OUTPUT_DIR: /app/output
-      API_URL: http://host.docker.internal:8000/
+      API_URL: http://46.101.75.136:8000:8000/
       WORK_DIR: /app/work
     env_file:
       - .env.spaces
