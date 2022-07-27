@@ -178,12 +178,14 @@ workflow.onComplete {
     complete_message(final_params, workflow, version)
     "mkdir ${final_params.output_dir}/api_interaction".execute()
     "touch ${final_params.output_dir}/api_interaction/complete.txt".execute()
+    println "Created ${final_params.output_dir}/api_interaction/complete.txt."
 }
 
 workflow.onError {
     error_message(workflow)
     "mkdir ${final_params.output_dir}/api_interaction".execute()
     "touch ${final_params.output_dir}/api_interaction/complete.txt".execute()
+    println "Created ${final_params.output_dir}/api_interaction/complete.txt."
     if (final_params.api_url){
         upload_error_report(final_params, workflow, version)
     }

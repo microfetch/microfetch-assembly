@@ -826,7 +826,7 @@ process DOWNLOAD_FASTQ {
 	// Extract the fastq links from an API json response
 	// Download and zip files from fastq links
 	tag "$json_file.baseName"
-  publishDir "${params.output_dir}/api_interaction", mode: 'symlink'
+  publishDir "${params.output_dir}/api_interaction", mode: 'copy'
 
 	input:
 		path json_file
