@@ -42,7 +42,7 @@ RUN crontab /etc/cron.d/assembler-cron
 # Create the log file to be able to run tail
 RUN touch /var/log/cron.log
 
-RUN chmod +x cron.sh
+# RUN chmod 0644 ./cron.sh
 
 # Run the command on container startup
 # Import envvars because cron doesn't have them.

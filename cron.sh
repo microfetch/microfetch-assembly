@@ -4,12 +4,16 @@
 #cat /etc/environment
 
 # Check whether no runs have happened or last run has finished
-if ! [ -d "$WORK_DIR" ] || [ -f "$OUTPUT_DIR/api_interaction/complete.txt" ];
+if ! [ -d "$WORK_DIR" ] || [ -f "$OUTPUT_DIR/api_interaction/complete.txt" ] || pgrep -x java >/dev/null;
 then
   if ! [ -d "$WORK_DIR" ];
   then
     echo "New run, skipping cleaning step."
   else
+      if pgrep -x java >/dev/null;
+      then
+        echo "Java not running (likely unclean exit), relaunching."
+      fi
     echo "Cleaning: remove $WORK_DIR, $OUTPUT_DIR; run nextflow clean -f"
     rm -rf "$WORK_DIR"
     rm -rf "$OUTPUT_DIR"
