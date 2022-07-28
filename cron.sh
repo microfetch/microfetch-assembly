@@ -3,14 +3,21 @@
 #echo "$PATH"
 #cat /etc/environment
 
+#if ! pgrep -x java >/dev/null;
+#then
+#  echo "! preg -x java >/dev/null is truthy"
+#else
+#  echo "! preg -x java >/dev/null is falsey"
+#fi
+
 # Check whether no runs have happened or last run has finished
-if ! [ -d "$WORK_DIR" ] || [ -f "$OUTPUT_DIR/api_interaction/complete.txt" ] || pgrep -x java >/dev/null;
+if ! [ -d "$WORK_DIR" ] || [ -f "$OUTPUT_DIR/api_interaction/complete.txt" ] || ! pgrep -x java >/dev/null;
 then
   if ! [ -d "$WORK_DIR" ];
   then
     echo "New run, skipping cleaning step."
   else
-      if pgrep -x java >/dev/null;
+      if ! pgrep -x java >/dev/null;
       then
         echo "Java not running (likely unclean exit), relaunching."
       fi

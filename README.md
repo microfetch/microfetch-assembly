@@ -141,6 +141,8 @@ which will run single API-connected pipeline instance with cron,
 starting a new pipeline when the previous one completes.
 To do this, make sure the `API_URL` in the `docker-compose.yml` points to an active API instance.
 
+You will need a `confindr_database.tar.gz` file in the `./Docker` directory for the image to build.
+
 You will also need an environment file to allow the pipeline to save data to Digital Ocean's Spaces.
 Create this file if it does not exist in the root directory.
 
