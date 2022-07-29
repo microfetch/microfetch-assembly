@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-#echo "$PATH"
+PATH=/opt/conda/bin:/opt/conda/condabin:/opt/conda/bin:/opt/conda/condabin:/opt/conda/envs/trimmomatic/bin:/opt/conda/envs/assembly/bin:/opt/conda/envs/quast/bin:/opt/conda/envs/confindr/bin:/opt/conda/envs/kat/bin:/opt/conda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 #cat /etc/environment
 
 #if ! pgrep -x java >/dev/null;
@@ -8,6 +8,15 @@
 #  echo "! preg -x java >/dev/null is truthy"
 #else
 #  echo "! preg -x java >/dev/null is falsey"
+#fi
+
+#if ! [ -f /app/skip-pipeline ];
+#then
+#  echo "Marking pipeline as already run."
+#  touch /app/skip-pipeline
+#else
+#  echo "Pipeline already run once for debugging."
+#  exit 0
 #fi
 
 # Check whether no runs have happened or last run has finished

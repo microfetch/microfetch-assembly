@@ -15,3 +15,5 @@ nxf-tmp*
 test.nf
 
 output/
+
+skip-pipeline
