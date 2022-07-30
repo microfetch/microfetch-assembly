@@ -165,7 +165,7 @@ workflow {
         if (final_params.api_url){
 					UPLOAD_TO_SPACES(FILTER_SCAFFOLDS.out.scaffolds_for_combined_analysis, QUALIFYR_REPORT.out)
 					FILTER_ASSEMBLY_RESULT(QUALIFYR_REPORT.out, GET_API_INPUT.out)
-					CALLBACK_API(final_params.api_url, GET_API_INPUT.out, UPLOAD_TO_SPACES.out, QUALIFYR_REPORT.out)
+					CALLBACK_API(final_params.api_url, GET_API_INPUT.out, UPLOAD_TO_SPACES.out, QUALIFYR_REPORT.out, FILTER_ASSEMBLY_RESULT.out)
         }
     } else {
         scaffolds = FILTER_SCAFFOLDS.out.scaffolds_for_single_analysis.map{ tuple -> tuple[1]}.collect()

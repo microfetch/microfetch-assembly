@@ -861,6 +861,9 @@ process FILTER_ASSEMBLY_RESULT {
 		path(qc_file)
 		path(api_response)
 
+	output:
+		val("filters_passed")
+
 	script:
 		template "api_interaction/filter_assembly_result.py"
 
@@ -920,6 +923,7 @@ process CALLBACK_API {
 		val api_response
 		tuple(path(upload_url_file), path(upload_sha_file))
 		val qualifyr_report
+		val filter_result
 
 	script:
 		template "api_interaction/callback_api.py"
@@ -933,6 +937,7 @@ process CALLBACK_API {
 			echo assembly_result: success
 			echo assembled_genome_url: $upload_url_file
 			echo qualifyr_report: [$qualifyr_report]
+			echo filter_result: $filter_result
 			"""
 		}
 }
