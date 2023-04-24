@@ -439,7 +439,7 @@ process MERGE_READS{
 
 process SPADES_ASSEMBLY {
   // memory { 4.GB * task.attempt }
-  cpus { task.attempt == 1 ? 1 : 2 }
+//   cpus { task.attempt == 1 ? 1 : 2 }
 
   tag { sample_id }
 
